@@ -4,7 +4,13 @@ import { PlaceHolderImages } from './placeholder-images';
 const getImage = (id: string) => {
   const image = PlaceHolderImages.find(img => img.id === id);
   if (!image) {
-    throw new Error(`Image with id "${id}" not found.`);
+    // A more graceful fallback for missing images
+    return {
+      id: 'not-found',
+      url: 'https://placehold.co/600x400/EEE/31343C?text=Image+Not+Found',
+      alt: 'Image not found',
+      hint: 'placeholder',
+    };
   }
   return {
     id: image.id,
@@ -26,7 +32,7 @@ const shoes: Shoe[] = [
     sizes: [7, 8, 9, 10, 11, 12],
     reviews: [
       { id: 1, rating: 5, text: 'Incredibly comfortable and stylish. I wear them everywhere!', author: 'Alex D.', date: '2023-05-15' },
-      { id: 2, rating: 4, text: 'Great for running, very supportive.', author: 'Sam B.', date: '2023-04-22' },
+      { id: 2, rating: 4.5, text: 'Great for running, very supportive.', author: 'Sam B.', date: '2023-04-22' },
     ],
   },
   {
@@ -126,14 +132,16 @@ const shoes: Shoe[] = [
   },
 ];
 
+// Simulate API calls with a delay
+const apiDelay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 export async function getShoes(): Promise<Shoe[]> {
-  // Simulate a network delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-  return shoes;
+  await apiDelay(500);
+  return JSON.parse(JSON.stringify(shoes));
 }
 
 export async function getShoeById(id: string): Promise<Shoe | undefined> {
-  // Simulate a network delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-  return shoes.find(shoe => shoe.id === id);
+  await apiDelay(500);
+  const shoe = shoes.find(shoe => shoe.id === id);
+  return shoe ? JSON.parse(JSON.stringify(shoe)) : undefined;
 }

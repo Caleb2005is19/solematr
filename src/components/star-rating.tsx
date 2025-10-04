@@ -10,24 +10,25 @@ interface StarRatingProps {
 
 export default function StarRating({ rating, totalStars = 5, size = 20, className }: StarRatingProps) {
   const fullStars = Math.floor(rating);
-  const emptyStars = totalStars - Math.ceil(rating);
-  const partialStar = rating % 1 !== 0;
+  const partialStarWidth = (rating % 1) * 100;
+  const hasPartialStar = partialStarWidth > 0;
+  const emptyStars = totalStars - fullStars - (hasPartialStar ? 1 : 0);
 
   return (
-    <div className={cn('flex items-center', className)}>
+    <div className={cn('flex items-center gap-0.5', className)}>
       {[...Array(fullStars)].map((_, i) => (
         <Star key={`full-${i}`} fill="currentColor" size={size} className="text-primary" />
       ))}
-      {partialStar && (
-        <div style={{ position: 'relative', display: 'inline-block' }}>
-          <Star size={size} className="text-gray-400" />
-          <div style={{ position: 'absolute', top: 0, left: 0, overflow: 'hidden', width: `${(rating % 1) * 100}%` }}>
+      {hasPartialStar && (
+        <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+          <Star size={size} className="text-muted-foreground/50" fill="currentColor"/>
+          <div style={{ position: 'absolute', top: 0, left: 0, overflow: 'hidden', width: `${partialStarWidth}%` }}>
             <Star size={size} fill="currentColor" className="text-primary" />
           </div>
         </div>
       )}
       {[...Array(emptyStars)].map((_, i) => (
-        <Star key={`empty-${i}`} size={size} className="text-gray-400" />
+        <Star key={`empty-${i}`} size={size} className="text-muted-foreground/50" />
       ))}
     </div>
   );

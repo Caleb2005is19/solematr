@@ -20,7 +20,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import StarRating from '@/components/star-rating';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, ShoppingCart } from 'lucide-react';
 import { useBrowsingHistory } from '@/hooks/use-browsing-history-hook';
 
 export default function ShoeDetailPage({ params }: { params: { shoeId: string } }) {
@@ -33,18 +33,19 @@ export default function ShoeDetailPage({ params }: { params: { shoeId: string } 
   const { addShoeToHistory } = useBrowsingHistory();
 
   useEffect(() => {
+    if (!shoeId) return;
     const fetchShoe = async () => {
       const fetchedShoe = await getShoeById(shoeId);
       if (fetchedShoe) {
         setShoe(fetchedShoe);
-        if (fetchedShoe.sizes.length > 0) {
+        if (fetchedShoe.sizes.length > 0 && !selectedSize) {
           setSelectedSize(fetchedShoe.sizes[0]);
         }
         addShoeToHistory(shoeId);
       }
     };
     fetchShoe();
-  }, [shoeId, addShoeToHistory]);
+  }, [shoeId, addShoeToHistory, selectedSize]);
 
   const handleAddToCart = () => {
     if (!shoe) return;
@@ -71,13 +72,13 @@ export default function ShoeDetailPage({ params }: { params: { shoeId: string } 
   }
 
   return (
-    <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
+    <div className="grid md:grid-cols-2 gap-8 lg:gap-16">
       <div className="w-full">
         <Carousel className="w-full">
           <CarouselContent>
             {shoe.images.map((image, index) => (
               <CarouselItem key={index}>
-                <Card>
+                <Card className="overflow-hidden">
                   <CardContent className="flex aspect-video items-center justify-center p-0">
                     <Image
                       src={image.url}
@@ -85,29 +86,29 @@ export default function ShoeDetailPage({ params }: { params: { shoeId: string } 
                       data-ai-hint={image.hint}
                       width={1200}
                       height={800}
-                      className="rounded-lg object-cover"
+                      className="rounded-lg object-cover w-full h-full"
                     />
                   </CardContent>
                 </Card>
               </CarouselItem>
             ))}
           </CarouselContent>
-          <CarouselPrevious />
-          <CarouselNext />
+          <CarouselPrevious className="ml-14" />
+          <CarouselNext className="mr-14" />
         </Carousel>
       </div>
       
       <div className="flex flex-col gap-6">
         <div>
-          <p className="text-sm font-medium text-primary">{shoe.brand}</p>
-          <h1 className="text-4xl font-bold font-headline tracking-tight">{shoe.name}</h1>
+          <p className="text-sm font-medium text-primary uppercase tracking-wider">{shoe.brand}</p>
+          <h1 className="text-4xl lg:text-5xl font-bold font-headline tracking-tight">{shoe.name}</h1>
           <p className="mt-2 text-3xl font-bold">${shoe.price.toFixed(2)}</p>
         </div>
 
         <p className="text-muted-foreground leading-relaxed">{shoe.description}</p>
         
         <div>
-            <h3 className="text-lg font-semibold mb-4">Select Size</h3>
+            <h3 className="text-lg font-semibold mb-4">Select Size (US Men's)</h3>
             <RadioGroup
                 value={selectedSize?.toString()}
                 onValueChange={(value) => setSelectedSize(Number(value))}
@@ -128,7 +129,10 @@ export default function ShoeDetailPage({ params }: { params: { shoeId: string } 
             {error && <p className="mt-2 text-sm text-destructive flex items-center gap-1"><AlertCircle className="h-4 w-4" />{error}</p>}
         </div>
 
-        <Button size="lg" onClick={handleAddToCart}>Add to Cart</Button>
+        <Button size="lg" onClick={handleAddToCart}>
+          <ShoppingCart className="mr-2 h-5 w-5" />
+          Add to Cart
+        </Button>
 
         <Separator />
 
@@ -156,21 +160,21 @@ export default function ShoeDetailPage({ params }: { params: { shoeId: string } 
 
 function ShoeDetailSkeleton() {
     return (
-      <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
+      <div className="grid md:grid-cols-2 gap-8 lg:gap-16">
         <div className="w-full">
             <Skeleton className="aspect-video w-full rounded-lg" />
         </div>
         <div className="flex flex-col gap-6">
           <div>
             <Skeleton className="h-5 w-24 mb-2" />
-            <Skeleton className="h-10 w-3/4 mb-3" />
+            <Skeleton className="h-12 w-3/4 mb-3" />
             <Skeleton className="h-8 w-1/4" />
           </div>
   
           <Skeleton className="h-20 w-full" />
           
           <div>
-              <Skeleton className="h-6 w-32 mb-4" />
+              <Skeleton className="h-6 w-40 mb-4" />
               <div className="flex flex-wrap gap-2">
                   {[...Array(5)].map((_, i) => (
                       <Skeleton key={i} className="h-10 w-14" />
