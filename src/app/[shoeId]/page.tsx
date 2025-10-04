@@ -24,6 +24,7 @@ import { AlertCircle } from 'lucide-react';
 import { useBrowsingHistory } from '@/hooks/use-browsing-history-hook';
 
 export default function ShoeDetailPage({ params }: { params: { shoeId: string } }) {
+  const { shoeId } = params;
   const [shoe, setShoe] = useState<Shoe | null>(null);
   const [selectedSize, setSelectedSize] = useState<number | null>(null);
   const [error, setError] = useState<string>('');
@@ -33,17 +34,17 @@ export default function ShoeDetailPage({ params }: { params: { shoeId: string } 
 
   useEffect(() => {
     const fetchShoe = async () => {
-      const fetchedShoe = await getShoeById(params.shoeId);
+      const fetchedShoe = await getShoeById(shoeId);
       if (fetchedShoe) {
         setShoe(fetchedShoe);
         if (fetchedShoe.sizes.length > 0) {
           setSelectedSize(fetchedShoe.sizes[0]);
         }
-        addShoeToHistory(params.shoeId);
+        addShoeToHistory(shoeId);
       }
     };
     fetchShoe();
-  }, [params.shoeId, addShoeToHistory]);
+  }, [shoeId, addShoeToHistory]);
 
   const handleAddToCart = () => {
     if (!shoe) return;
