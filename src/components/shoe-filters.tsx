@@ -25,7 +25,7 @@ export default function ShoeFilters({ brands, styles, sizes }: ShoeFiltersProps)
   const handleFilterChange = (type: 'brand' | 'style' | 'size', value: string) => {
     const current = new URLSearchParams(Array.from(searchParams.entries()));
     
-    if (!value) {
+    if (!value || value === 'all') {
       current.delete(type);
     } else {
       current.set(type, value);
@@ -50,12 +50,12 @@ export default function ShoeFilters({ brands, styles, sizes }: ShoeFiltersProps)
       <CardContent className="space-y-4">
         <div className="space-y-2">
           <label className="text-sm font-medium">Brand</label>
-          <Select onValueChange={(value) => handleFilterChange('brand', value)} defaultValue={searchParams.get('brand') || ''}>
+          <Select onValueChange={(value) => handleFilterChange('brand', value)} defaultValue={searchParams.get('brand') || 'all'}>
             <SelectTrigger>
               <SelectValue placeholder="All Brands" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Brands</SelectItem>
+              <SelectItem value="all">All Brands</SelectItem>
               {brands.map((brand) => (
                 <SelectItem key={brand} value={brand}>{brand}</SelectItem>
               ))}
@@ -64,12 +64,12 @@ export default function ShoeFilters({ brands, styles, sizes }: ShoeFiltersProps)
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium">Style</label>
-          <Select onValueChange={(value) => handleFilterChange('style', value)} defaultValue={searchParams.get('style') || ''}>
+          <Select onValueChange={(value) => handleFilterChange('style', value)} defaultValue={searchParams.get('style') || 'all'}>
             <SelectTrigger>
               <SelectValue placeholder="All Styles" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Styles</SelectItem>
+              <SelectItem value="all">All Styles</SelectItem>
               {styles.map((style) => (
                 <SelectItem key={style} value={style}>{style}</SelectItem>
               ))}
@@ -78,12 +78,12 @@ export default function ShoeFilters({ brands, styles, sizes }: ShoeFiltersProps)
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium">Size</label>
-          <Select onValueChange={(value) => handleFilterChange('size', value)} defaultValue={searchParams.get('size') || ''}>
+          <Select onValueChange={(value) => handleFilterChange('size', value)} defaultValue={searchParams.get('size') || 'all'}>
             <SelectTrigger>
               <SelectValue placeholder="All Sizes" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Sizes</SelectItem>
+              <SelectItem value="all">All Sizes</SelectItem>
               {sizes.map((size) => (
                 <SelectItem key={size} value={String(size)}>{size}</SelectItem>
               ))}
