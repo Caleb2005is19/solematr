@@ -24,7 +24,7 @@ import { AlertCircle } from 'lucide-react';
 import { useBrowsingHistory } from '@/hooks/use-browsing-history-hook';
 
 export default function ShoeDetailPage({ params }: { params: { shoeId: string } }) {
-  const { shoeId } = params;
+  const shoeId = params.shoeId;
   const [shoe, setShoe] = useState<Shoe | null>(null);
   const [selectedSize, setSelectedSize] = useState<number | null>(null);
   const [error, setError] = useState<string>('');
