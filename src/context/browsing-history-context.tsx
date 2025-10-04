@@ -1,11 +1,18 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useEffect, useCallback, ReactNode } from 'react';
 
-const MAX_HISTORY_LENGTH = 10;
-const STORAGE_KEY = 'solemate_browsing_history';
+const MAX_HISTORY_LENGTH = 5;
+const STORAGE_KEY = 'solemate_kenya_browsing_history';
 
-export const useBrowsingHistory = () => {
+type BrowsingHistoryContextType = {
+  history: string[];
+  addShoeToHistory: (shoeId: string) => void;
+};
+
+export const BrowsingHistoryContext = createContext<BrowsingHistoryContextType | undefined>(undefined);
+
+export const BrowsingHistoryProvider = ({ children }: { children: ReactNode }) => {
   const [history, setHistory] = useState<string[]>([]);
 
   useEffect(() => {
@@ -32,5 +39,9 @@ export const useBrowsingHistory = () => {
     });
   }, []);
 
-  return { history, addShoeToHistory };
+  return (
+    <BrowsingHistoryContext.Provider value={{ history, addShoeToHistory }}>
+      {children}
+    </BrowsingHistoryContext.Provider>
+  );
 };

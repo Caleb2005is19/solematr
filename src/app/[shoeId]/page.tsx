@@ -21,7 +21,7 @@ import { Separator } from '@/components/ui/separator';
 import StarRating from '@/components/star-rating';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle } from 'lucide-react';
-import { useBrowsingHistory } from '@/hooks/use-browsing-history';
+import { useBrowsingHistory } from '@/hooks/use-browsing-history-hook';
 
 export default function ShoeDetailPage({ params }: { params: { shoeId: string } }) {
   const [shoe, setShoe] = useState<Shoe | null>(null);
@@ -134,7 +134,7 @@ export default function ShoeDetailPage({ params }: { params: { shoeId: string } 
         <div>
             <h3 className="text-xl font-semibold mb-4">Customer Reviews</h3>
             <div className="space-y-6">
-                {shoe.reviews.map(review => (
+                {shoe.reviews.length > 0 ? shoe.reviews.map(review => (
                     <div key={review.id} className="p-4 border rounded-lg bg-card">
                         <div className="flex items-center justify-between mb-2">
                            <p className="font-semibold">{review.author}</p>
@@ -142,7 +142,9 @@ export default function ShoeDetailPage({ params }: { params: { shoeId: string } 
                         </div>
                         <p className="text-sm text-muted-foreground italic">"{review.text}"</p>
                     </div>
-                ))}
+                )) : (
+                  <p className="text-sm text-muted-foreground">No reviews yet for this product.</p>
+                )}
             </div>
         </div>
       </div>

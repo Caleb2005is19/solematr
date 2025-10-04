@@ -14,6 +14,8 @@ type Action =
   | { type: 'SET_STATE'; payload: State }
   | { type: 'CLEAR_CART' };
 
+const CART_STORAGE_KEY = 'solemate_kenya_cart';
+
 const initialState: State = {
   items: [],
 };
@@ -86,7 +88,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     try {
-      const storedState = localStorage.getItem('solemate_cart');
+      const storedState = localStorage.getItem(CART_STORAGE_KEY);
       if (storedState) {
         dispatch({ type: 'SET_STATE', payload: JSON.parse(storedState) });
       }
@@ -97,7 +99,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     try {
-      localStorage.setItem('solemate_cart', JSON.stringify(state));
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(state));
     } catch (error) {
       console.error("Could not save cart to local storage", error)
     }
