@@ -2,7 +2,6 @@ import { getShoes } from '@/lib/data';
 import ShoeCard from '@/components/shoe-card';
 import ShoeFilters from '@/components/shoe-filters';
 import { XCircle } from 'lucide-react';
-import StyleRecommender from '@/components/style-recommender';
 
 export default async function HomePage({
   searchParams,
@@ -28,7 +27,6 @@ export default async function HomePage({
       <aside className="lg:col-span-1">
         <div className="sticky top-24 space-y-6">
           <ShoeFilters brands={brands} styles={styles} sizes={sizes} />
-          <StyleRecommender />
         </div>
       </aside>
       <section className="lg:col-span-3">
@@ -43,7 +41,7 @@ export default async function HomePage({
             <XCircle className="w-16 h-16 text-muted-foreground" />
             <h2 className="mt-6 text-2xl font-semibold">No Shoes Found</h2>
             <p className="mt-2 text-muted-foreground">
-              Try adjusting your filters or use our AI Style Finder.
+              Try adjusting your filters.
             </p>
           </div>
         )}
