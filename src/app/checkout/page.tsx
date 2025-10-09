@@ -19,8 +19,11 @@ import {
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { CreditCard, Lock } from 'lucide-react';
-import { useEffect } from 'react';
+import { CreditCard, Lock, Smartphone } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { initiateStkPush } from '@/lib/mpesa';
+import { cn } from '@/lib/utils';
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
@@ -29,45 +32,103 @@ const formSchema = z.object({
   city: z.string().min(2, 'Please enter a valid city.'),
   postalCode: z.string().min(4, 'Please enter a valid postal code.'),
   country: z.string().min(2, 'Please enter a valid country.'),
-  cardName: z.string().min(2, 'Name on card is required.'),
-  cardNumber: z.string().regex(/^\d{16}$/, 'Card number must be 16 digits.'),
-  expiryDate: z.string().regex(/^(0[1-9]|1[0-2])\/\d{2}$/, 'Expiry must be in MM/YY format.'),
-  cvc: z.string().regex(/^\d{3,4}$/, 'CVC must be 3 or 4 digits.'),
+  paymentMethod: z.enum(['card', 'mpesa'], { required_error: 'Please select a payment method.' }),
+  mpesaPhone: z.string().optional(),
+  cardName: z.string().optional(),
+  cardNumber: z.string().optional(),
+  expiryDate: z.string().optional(),
+  cvc: z.string().optional(),
+}).refine(data => {
+    if (data.paymentMethod === 'card') {
+        return !!data.cardName && data.cardName.length >= 2 &&
+               !!data.cardNumber && /^\d{16}$/.test(data.cardNumber) &&
+               !!data.expiryDate && /^(0[1-9]|1[0-2])\/\d{2}$/.test(data.expiryDate) &&
+               !!data.cvc && /^\d{3,4}$/.test(data.cvc);
+    }
+    return true;
+}, {
+    message: "Please fill all credit card details correctly.",
+    path: ['cardName'], // you can pick any of the card fields
+}).refine(data => {
+    if (data.paymentMethod === 'mpesa') {
+        return !!data.mpesaPhone && /^254\d{9}$/.test(data.mpesaPhone);
+    }
+    return true;
+}, {
+    message: "M-Pesa number must be in the format 254xxxxxxxxx.",
+    path: ['mpesaPhone'],
 });
 
 export default function CheckoutPage() {
   const { items, totalPrice, clearCart } = useCart();
   const router = useRouter();
   const { toast } = useToast();
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: '', name: '', address: '', city: '', postalCode: '', country: 'Kenya',
+      paymentMethod: 'card', mpesaPhone: '',
       cardName: '', cardNumber: '', expiryDate: '', cvc: '',
     },
   });
 
+  const paymentMethod = form.watch('paymentMethod');
+
   useEffect(() => {
-    if (items.length === 0) {
+    if (!isProcessing && items.length === 0) {
       router.replace('/');
     }
-  }, [items, router]);
+  }, [items, router, isProcessing]);
 
 
-  if (items.length === 0) {
-    return null; // Or a loading/redirecting state
+  if (items.length === 0 && !isProcessing) {
+    return null;
   }
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    // In a real app, you would process the payment here.
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    setIsProcessing(true);
+
+    if (values.paymentMethod === 'mpesa') {
+        toast({
+            title: "Processing M-Pesa Payment",
+            description: `Sending STK push to ${values.mpesaPhone}. Please check your phone to complete the transaction.`,
+        });
+        try {
+            // In a real app, you would call your backend which then calls Safaricom API
+            await initiateStkPush(values.mpesaPhone!, totalPrice);
+            
+            toast({
+                title: "Payment Successful!",
+                description: "Your M-Pesa payment has been received.",
+            });
+            
+            completeOrder();
+
+        } catch (error) {
+             toast({
+                variant: "destructive",
+                title: "M-Pesa Payment Failed",
+                description: (error as Error).message || "Could not process the M-Pesa payment. Please try again.",
+            });
+            setIsProcessing(false);
+        }
+    } else { // Credit Card Payment
+        // In a real app, you would process the payment here with a payment gateway.
+        console.log("Processing credit card payment", values);
+        completeOrder();
+    }
+  };
+
+  const completeOrder = () => {
     toast({
         title: "Order Placed Successfully!",
         description: "Thank you for your purchase. A confirmation has been sent to your email.",
     });
     clearCart();
     router.push('/');
-  };
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
@@ -83,33 +144,33 @@ export default function CheckoutPage() {
                 <FormField control={form.control} name="email" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Email Address</FormLabel>
-                      <FormControl><Input placeholder="you@example.com" {...field} /></FormControl>
+                      <FormControl><Input placeholder="you@example.com" {...field} disabled={isProcessing} /></FormControl>
                       <FormMessage />
                     </FormItem>
                 )}/>
                 <FormField control={form.control} name="name" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Full Name</FormLabel>
-                      <FormControl><Input placeholder="John Doe" {...field} /></FormControl>
+                      <FormControl><Input placeholder="John Doe" {...field} disabled={isProcessing} /></FormControl>
                       <FormMessage />
                     </FormItem>
                 )}/>
                 <FormField control={form.control} name="address" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Shipping Address</FormLabel>
-                      <FormControl><Input placeholder="123 Main St, Apartment 4B" {...field} /></FormControl>
+                      <FormControl><Input placeholder="123 Main St, Apartment 4B" {...field} disabled={isProcessing} /></FormControl>
                       <FormMessage />
                     </FormItem>
                 )}/>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <FormField control={form.control} name="city" render={({ field }) => (
-                        <FormItem><FormLabel>City</FormLabel><FormControl><Input placeholder="Nairobi" {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>City</FormLabel><FormControl><Input placeholder="Nairobi" {...field} disabled={isProcessing} /></FormControl><FormMessage /></FormItem>
                     )}/>
                     <FormField control={form.control} name="postalCode" render={({ field }) => (
-                        <FormItem><FormLabel>Postal Code</FormLabel><FormControl><Input placeholder="00100" {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>Postal Code</FormLabel><FormControl><Input placeholder="00100" {...field} disabled={isProcessing} /></FormControl><FormMessage /></FormItem>
                     )}/>
                     <FormField control={form.control} name="country" render={({ field }) => (
-                        <FormItem><FormLabel>Country</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>Country</FormLabel><FormControl><Input {...field} disabled={isProcessing} /></FormControl><FormMessage /></FormItem>
                     )}/>
                 </div>
               </CardContent>
@@ -117,29 +178,90 @@ export default function CheckoutPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2"><CreditCard className="h-5 w-5"/> Payment Details</CardTitle>
+                <CardTitle>Payment Method</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-              <FormField control={form.control} name="cardName" render={({ field }) => (
-                    <FormItem><FormLabel>Name on Card</FormLabel><FormControl><Input placeholder="John M. Doe" {...field} /></FormControl><FormMessage /></FormItem>
-                )}/>
-                <FormField control={form.control} name="cardNumber" render={({ field }) => (
-                    <FormItem><FormLabel>Card Number</FormLabel><FormControl><Input placeholder="•••• •••• •••• ••••" autoComplete="cc-number" {...field} /></FormControl><FormMessage /></FormItem>
-                )}/>
-                <div className="grid grid-cols-2 gap-4">
-                    <FormField control={form.control} name="expiryDate" render={({ field }) => (
-                        <FormItem><FormLabel>Expiry (MM/YY)</FormLabel><FormControl><Input placeholder="MM/YY" autoComplete="cc-exp" {...field} /></FormControl><FormMessage /></FormItem>
-                    )}/>
-                    <FormField control={form.control} name="cvc" render={({ field }) => (
-                        <FormItem><FormLabel>CVC / CVV</FormLabel><FormControl><Input placeholder="123" autoComplete="cc-csc" {...field} /></FormControl><FormMessage /></FormItem>
-                    )}/>
-                </div>
+              <CardContent>
+                 <FormField
+                    control={form.control}
+                    name="paymentMethod"
+                    render={({ field }) => (
+                        <FormItem className="space-y-3">
+                        <FormControl>
+                            <RadioGroup
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                                className="flex flex-col space-y-1"
+                                disabled={isProcessing}
+                            >
+                                <FormItem className="flex items-center space-x-3 space-y-0">
+                                    <FormControl>
+                                        <RadioGroupItem value="card" />
+                                    </FormControl>
+                                    <FormLabel className="font-normal flex items-center gap-2">
+                                        <CreditCard className="h-5 w-5"/> Credit/Debit Card
+                                    </FormLabel>
+                                </FormItem>
+                                <FormItem className="flex items-center space-x-3 space-y-0">
+                                    <FormControl>
+                                        <RadioGroupItem value="mpesa" />
+                                    </FormControl>
+                                    <FormLabel className="font-normal flex items-center gap-2">
+                                        <Image src="/mpesa-logo.svg" alt="M-Pesa Logo" width={60} height={20} />
+                                    </FormLabel>
+                                </FormItem>
+                            </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
               </CardContent>
             </Card>
+
+            <div className={cn(paymentMethod === 'card' ? 'block' : 'hidden')}>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><CreditCard className="h-5 w-5"/> Card Details</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                    <FormField control={form.control} name="cardName" render={({ field }) => (
+                            <FormItem><FormLabel>Name on Card</FormLabel><FormControl><Input placeholder="John M. Doe" {...field} disabled={isProcessing} /></FormControl><FormMessage /></FormItem>
+                        )}/>
+                        <FormField control={form.control} name="cardNumber" render={({ field }) => (
+                            <FormItem><FormLabel>Card Number</FormLabel><FormControl><Input placeholder="•••• •••• •••• ••••" autoComplete="cc-number" {...field} disabled={isProcessing} /></FormControl><FormMessage /></FormItem>
+                        )}/>
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField control={form.control} name="expiryDate" render={({ field }) => (
+                                <FormItem><FormLabel>Expiry (MM/YY)</FormLabel><FormControl><Input placeholder="MM/YY" autoComplete="cc-exp" {...field} disabled={isProcessing} /></FormControl><FormMessage /></FormItem>
+                            )}/>
+                            <FormField control={form.control} name="cvc" render={({ field }) => (
+                                <FormItem><FormLabel>CVC / CVV</FormLabel><FormControl><Input placeholder="123" autoComplete="cc-csc" {...field} disabled={isProcessing} /></FormControl><FormMessage /></FormItem>
+                            )}/>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <div className={cn(paymentMethod === 'mpesa' ? 'block' : 'hidden')}>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Smartphone className="h-5 w-5"/> M-Pesa Details</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <FormField control={form.control} name="mpesaPhone" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>M-Pesa Phone Number</FormLabel>
+                                <FormControl><Input placeholder="254712345678" {...field} disabled={isProcessing} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}/>
+                    </CardContent>
+                </Card>
+            </div>
             
-            <Button type="submit" size="lg" className="w-full text-lg">
+            <Button type="submit" size="lg" className="w-full text-lg" disabled={isProcessing}>
                 <Lock className="mr-2 h-5 w-5" />
-                Pay securely - KES {totalPrice.toFixed(2)}
+                {isProcessing ? 'Processing...' : `Pay securely - KES ${totalPrice.toFixed(2)}`}
             </Button>
           </form>
         </Form>
