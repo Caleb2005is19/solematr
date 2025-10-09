@@ -34,7 +34,7 @@ export default function CartItem({ item }: CartItemProps) {
           <h3 className="font-semibold">{item.name}</h3>
         </Link>
         <p className="text-sm text-muted-foreground">Size: {item.size}</p>
-        <p className="text-sm font-medium">${item.price.toFixed(2)}</p>
+        <p className="text-sm font-medium">KSH {item.price.toFixed(2)}</p>
         <div className="mt-2 flex items-center gap-2">
             <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleQuantityChange(item.quantity - 1)}>
                 <Minus className="h-4 w-4" />

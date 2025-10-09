@@ -28,7 +28,7 @@ export default function ShoeCard({ shoe }: ShoeCardProps) {
           <p className="text-sm text-muted-foreground">{shoe.brand}</p>
         </CardContent>
         <CardFooter className="p-4 pt-0">
-          <p className="font-bold text-lg text-primary">${shoe.price.toFixed(2)}</p>
+          <p className="font-bold text-lg text-primary">KSH {shoe.price.toFixed(2)}</p>
         </CardFooter>
       </Card>
     </Link>

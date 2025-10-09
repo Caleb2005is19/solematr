@@ -38,7 +38,7 @@ export default function CartSheet() {
             <div className="flex w-full flex-col gap-4">
                 <div className="flex justify-between text-lg font-semibold">
                     <span>Subtotal</span>
-                    <span>${totalPrice.toFixed(2)}</span>
+                    <span>KSH {totalPrice.toFixed(2)}</span>
                 </div>
                 <p className="text-sm text-muted-foreground">Shipping and taxes will be calculated at checkout.</p>
                 <SheetClose asChild>

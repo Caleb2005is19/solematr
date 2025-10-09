@@ -64,7 +64,7 @@ export default function RecentlyViewed() {
               </div>
               <div>
                 <p className="text-sm font-semibold leading-tight group-hover:text-primary group-hover:underline">{shoe.name}</p>
-                <p className="text-sm text-muted-foreground">${shoe.price.toFixed(2)}</p>
+                <p className="text-sm text-muted-foreground">KSH {shoe.price.toFixed(2)}</p>
               </div>
             </Link>
           ))

@@ -56,7 +56,7 @@ export default async function ShoeDetailPage({ params }: { params: { shoeId: str
           <div>
             <p className="text-sm font-medium text-primary uppercase tracking-wider">{shoe.brand}</p>
             <h1 className="text-4xl lg:text-5xl font-bold font-headline tracking-tight">{shoe.name}</h1>
-            <p className="mt-2 text-3xl font-bold">${shoe.price.toFixed(2)}</p>
+            <p className="mt-2 text-3xl font-bold">KSH {shoe.price.toFixed(2)}</p>
           </div>
 
           <p className="text-muted-foreground leading-relaxed">{shoe.description}</p>

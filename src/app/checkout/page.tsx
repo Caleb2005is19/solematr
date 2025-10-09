@@ -261,7 +261,7 @@ export default function CheckoutPage() {
             
             <Button type="submit" size="lg" className="w-full text-lg" disabled={isProcessing}>
                 <Lock className="mr-2 h-5 w-5" />
-                {isProcessing ? 'Processing...' : `Pay securely - KES ${totalPrice.toFixed(2)}`}
+                {isProcessing ? 'Processing...' : `Pay securely - KSH ${totalPrice.toFixed(2)}`}
             </Button>
           </form>
         </Form>
@@ -282,14 +282,14 @@ export default function CheckoutPage() {
                             <p className="font-semibold">{item.name}</p>
                             <p className="text-sm text-muted-foreground">Size: {item.size}</p>
                         </div>
-                        <p className="font-medium">${(item.price * item.quantity).toFixed(2)}</p>
+                        <p className="font-medium">KSH {(item.price * item.quantity).toFixed(2)}</p>
                     </div>
                 ))}
                 <Separator />
                 <div className="space-y-2 text-base">
                     <div className="flex justify-between font-medium">
                         <span>Subtotal</span>
-                        <span>${totalPrice.toFixed(2)}</span>
+                        <span>KSH {totalPrice.toFixed(2)}</span>
                     </div>
                      <div className="flex justify-between text-muted-foreground">
                         <span>Shipping</span>
@@ -302,7 +302,7 @@ export default function CheckoutPage() {
                     <Separator />
                     <div className="flex justify-between font-bold text-xl pt-2">
                         <span>Total</span>
-                        <span>${totalPrice.toFixed(2)}</span>
+                        <span>KSH {totalPrice.toFixed(2)}</span>
                     </div>
                 </div>
             </CardContent>
