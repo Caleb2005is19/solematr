@@ -3,12 +3,24 @@
  * would make a call to your backend, which would then securely communicate with the
  * Safaricom Daraja API to initiate the STK push.
  *
+ * Your backend would use environment variables (e.g., process.env.MPESA_CONSUMER_KEY)
+ * to securely access your credentials without exposing them on the client-side.
+ * Never use server-side secrets like MPESA_CONSUMER_KEY or MPESA_CONSUMER_SECRET in client-side code.
+ *
  * @param phoneNumber The customer's phone number in the format 254xxxxxxxxx
  * @param amount The amount to be charged
  * @returns A promise that resolves if the payment is successful or rejects if it fails.
  */
 export async function initiateStkPush(phoneNumber: string, amount: number): Promise<{ success: boolean }> {
   console.log(`Simulating STK Push to ${phoneNumber} for amount ${amount}`);
+  
+  // In a real backend, you would use these environment variables.
+  // const consumerKey = process.env.MPESA_CONSUMER_KEY;
+  // const consumerSecret = process.env.MPESA_CONSUMER_SECRET;
+  // const shortCode = process.env.MPESA_BUSINESS_SHORT_CODE;
+  // const passkey = process.env.MPESA_PASSKEY;
+  // console.log("Using credentials (backend only):", { consumerKey, shortCode });
+
 
   return new Promise((resolve, reject) => {
     // Simulate network delay and API processing time
