@@ -1,95 +1,345 @@
 {
   "entities": {
-    "UserProfile": {
-      "title": "User Profile",
-      "description": "Represents a user's public profile information.",
+    "Shoe": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Shoe",
       "type": "object",
+      "description": "Represents a shoe product in the store.",
       "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Shoe entity."
+        },
         "name": {
           "type": "string",
-          "description": "The user's full name."
+          "description": "Name of the shoe."
+        },
+        "brand": {
+          "type": "string",
+          "description": "Brand of the shoe."
+        },
+        "style": {
+          "type": "string",
+          "description": "Style of the shoe (e.g., running, casual, formal)."
+        },
+        "size": {
+          "type": "number",
+          "description": "Available size of the shoe."
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description of the shoe."
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL of the shoe's image.",
+          "format": "uri"
+        },
+        "price": {
+          "type": "number",
+          "description": "Price of the shoe."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "brand",
+        "style",
+        "size",
+        "description",
+        "imageUrl",
+        "price"
+      ]
+    },
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the SoleMate application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
         },
         "email": {
           "type": "string",
-          "format": "email",
-          "description": "The user's email address."
+          "description": "Email address of the user.",
+          "format": "email"
+        },
+        "firstName": {
+          "type": "string",
+          "description": "First name of the user."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "Last name of the user."
         }
       },
-      "required": ["name", "email"]
+      "required": [
+        "id",
+        "email",
+        "firstName",
+        "lastName"
+      ]
     },
-    "Order": {
-      "title": "Order",
-      "description": "Represents a customer's order.",
+    "CartItem": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "CartItem",
       "type": "object",
+      "description": "Represents an item in the user's shopping cart.",
       "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the CartItem entity."
+        },
         "userId": {
           "type": "string",
-          "description": "The ID of the user who placed the order."
+          "description": "Reference to User. (Relationship: User 1:N CartItem)"
         },
-        "customerInfo": {
-          "type": "object",
-          "properties": {
-            "name": { "type": "string" },
-            "email": { "type": "string" },
-            "address": { "type": "string" },
-            "city": { "type": "string" },
-            "postalCode": { "type": "string" },
-            "country": { "type": "string" }
-          },
-          "required": ["name", "email", "address", "city", "postalCode", "country"]
-        },
-        "items": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "shoeId": { "type": "string" },
-              "name": { "type": "string" },
-              "price": { "type": "number" },
-              "size": { "type": "number" },
-              "quantity": { "type": "number" },
-              "imageUrl": { "type": "string" }
-            },
-            "required": ["shoeId", "name", "price", "size", "quantity"]
-          }
-        },
-        "totalPrice": {
-          "type": "number"
-        },
-        "paymentMethod": {
+        "shoeId": {
           "type": "string",
-          "enum": ["card", "mpesa"]
+          "description": "Reference to Shoe. (Relationship: Shoe 1:N CartItem)"
         },
-        "status": {
-          "type": "string",
-          "enum": ["unfulfilled", "fulfilled", "shipped", "cancelled"],
-          "description": "The current status of the order."
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time"
+        "quantity": {
+          "type": "number",
+          "description": "Quantity of the shoe in the cart."
         }
       },
-      "required": ["userId", "customerInfo", "items", "totalPrice", "paymentMethod", "status", "createdAt"]
+      "required": [
+        "id",
+        "userId",
+        "shoeId",
+        "quantity"
+      ]
+    },
+    "Order": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Order",
+      "type": "object",
+      "description": "Represents a completed order.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Order entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Order)"
+        },
+        "orderDate": {
+          "type": "string",
+          "description": "Date and time when the order was placed.",
+          "format": "date-time"
+        },
+        "totalAmount": {
+          "type": "number",
+          "description": "Total amount of the order."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "orderDate",
+        "totalAmount"
+      ]
+    },
+    "OrderItem": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "OrderItem",
+      "type": "object",
+      "description": "Represents an item within an order.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the OrderItem entity."
+        },
+        "orderId": {
+          "type": "string",
+          "description": "Reference to Order. (Relationship: Order 1:N OrderItem)"
+        },
+        "shoeId": {
+          "type": "string",
+          "description": "Reference to Shoe. (Relationship: Shoe 1:N OrderItem)"
+        },
+        "quantity": {
+          "type": "number",
+          "description": "Quantity of the shoe in the order item."
+        },
+        "price": {
+          "type": "number",
+          "description": "Price of the shoe in the order item."
+        }
+      },
+      "required": [
+        "id",
+        "orderId",
+        "shoeId",
+        "quantity",
+        "price"
+      ]
+    },
+    "Recommendation": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Recommendation",
+      "type": "object",
+      "description": "Represents an AI-powered shoe style recommendation for a user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Recommendation entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Recommendation)"
+        },
+        "shoeId": {
+          "type": "string",
+          "description": "Reference to Shoe. (Relationship: Shoe 1:N Recommendation)"
+        },
+        "recommendationDate": {
+          "type": "string",
+          "description": "Date when the recommendation was generated.",
+          "format": "date-time"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Reason for the recommendation (e.g., 'Based on browsing history')."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "shoeId",
+        "recommendationDate",
+        "reason"
+      ]
     }
   },
   "auth": {
-    "providers": ["anonymous", "google.com"],
-    "customClaims": {
-      "admin": {
-        "type": "boolean",
-        "description": "Determines if a user has administrative privileges."
-      }
-    }
+    "providers": [
+      "password",
+      "anonymous"
+    ]
   },
   "firestore": {
-    "/users/{userId}": {
-      "schema": { "$ref": "#/entities/UserProfile" },
-      "description": "Stores public profile information for each user."
-    },
-    "/orders/{orderId}": {
-      "schema": { "$ref": "#/entities/Order" },
-      "description": "A collection of all customer orders. The path is intentionally /orders/{orderId} to reflect a single document."
-    }
+    "structure": [
+      {
+        "path": "/shoes/{shoeId}",
+        "definition": {
+          "entityName": "Shoe",
+          "schema": {
+            "$ref": "#/backend/entities/Shoe"
+          },
+          "description": "Stores shoe product information.",
+          "params": [
+            {
+              "name": "shoeId",
+              "description": "Unique identifier for the shoe."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profile information.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier for the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/cart_items/{cartItemId}",
+        "definition": {
+          "entityName": "CartItem",
+          "schema": {
+            "$ref": "#/backend/entities/CartItem"
+          },
+          "description": "Stores items in the user's shopping cart.  Parent user id is used for ownership.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier for the user."
+            },
+            {
+              "name": "cartItemId",
+              "description": "Unique identifier for the cart item."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/orders/{orderId}",
+        "definition": {
+          "entityName": "Order",
+          "schema": {
+            "$ref": "#/backend/entities/Order"
+          },
+          "description": "Stores user's order history.  Parent user id is used for ownership.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier for the user."
+            },
+            {
+              "name": "orderId",
+              "description": "Unique identifier for the order."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/orders/{orderId}/order_items/{orderItemId}",
+        "definition": {
+          "entityName": "OrderItem",
+          "schema": {
+            "$ref": "#/backend/entities/OrderItem"
+          },
+          "description": "Stores items within a specific order. Parent user and order ids are used for ownership.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier for the user."
+            },
+            {
+              "name": "orderId",
+              "description": "Unique identifier for the order."
+            },
+            {
+              "name": "orderItemId",
+              "description": "Unique identifier for the order item."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/recommendations/{recommendationId}",
+        "definition": {
+          "entityName": "Recommendation",
+          "schema": {
+            "$ref": "#/backend/entities/Recommendation"
+          },
+          "description": "Stores AI-powered shoe style recommendations for a user. Parent user id is used for ownership.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier for the user."
+            },
+            {
+              "name": "recommendationId",
+              "description": "Unique identifier for the recommendation."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to support the SoleMate e-commerce application, focusing on shoe browsing, product details, AI-powered recommendations, shopping cart management, and secure checkout. The structure prioritizes Authorization Independence by avoiding hierarchical authorization dependencies, ensuring robust security rules and atomic operations. Structural Segregation ensures all documents in a collection share the same security requirements, simplifying rules and improving security. Access Modeling uses path-based ownership for user-related data and existence checks for global roles. Data Clarity and Predictability are maintained through explicit state modeling, predictable schema, and semantic naming conventions.\n\n**Authorization Independence:**\nUser-owned data, such as cart items and orders, are nested under the `/users/{userId}` path, ensuring clear ownership and simplifying security rules. No `get()` calls are required to determine ownership.\n\n**QAPs Support:**\n*   Secure listing of shoes is achieved by storing all shoes in a single `/shoes` collection with consistent security requirements.\n*   User-specific data (cart, orders, recommendations) is stored under `/users/{userId}`, providing secure and efficient access control.\n\nThe structure facilitates simple, robust, and easily debuggable security rules."
   }
 }

@@ -1,44 +1,194 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions
+    /**
+     * Core Philosophy: This ruleset implements a dual security model. Product data
+     * (in the /shoes collection) is public and read-only, serving as a global catalog.
+     * All user-specific data (profiles, carts, orders) is private and strictly
+     * controlled using a user-ownership model.
+     *
+     * Data Structure: There is a top-level public collection for `/shoes`. All
+     * private user data is hierarchically organized under the `/users/{userId}` path.
+     * This structure leverages path-based security to ensure users can only access
+     * their own data tree, which includes subcollections for cart items, orders, and
+     * recommendations.
+     *
+     * Key Security Decisions:
+     * - Public Catalog: The `/shoes` collection is publicly readable by anyone but
+     *   cannot be modified by clients, ensuring catalog integrity. Data is expected
+     *   to be populated via the Admin SDK.
+     * - Strict User Ownership: All data under `/users/{userId}` is accessible only
+     *   to the authenticated user whose UID matches `{userId}`.
+     * - No User Enumeration: Listing documents in the top-level `/users`
+     *   collection is disabled to protect user privacy.
+     * - Relational Integrity: On creation, documents in user subcollections must
+     *   contain a `userId` field that matches the user ID in the path, ensuring
+     *   data consistency and preventing misplaced documents. This field is then
+     *   enforced as immutable.
+     *
+     * Denormalization for Authorization: The data model is well-designed. By nesting
+     * all user-specific data under `/users/{userId}`, the user's ID is part of the
+     * path. This allows for simple, fast, and secure authorization rules without
+     * needing extra `get()` calls to check ownership on related documents.
+     *
+     * Structural Segregation: The ruleset benefits from a clear separation between
+     * the public `/shoes` collection and the private `/users/{userId}` data trees.
+     * This segregation simplifies rule logic and prevents accidentally exposing
+     * private data in public queries.
+     */
+
+    // --------------------------------------------------------------------------
+    // Helper Functions
+    // --------------------------------------------------------------------------
+
+    /**
+     * Returns true if the user is signed in.
+     */
     function isSignedIn() {
       return request.auth != null;
     }
 
+    /**
+     * Returns true if the requesting user's UID matches the provided userId.
+     * This is the foundation of the user-ownership model.
+     */
     function isOwner(userId) {
-      return request.auth.uid == userId;
+      return isSignedIn() && request.auth.uid == userId;
     }
 
-    function isAdmin() {
-      return request.auth.token.admin == true;
+    /**
+     * Returns true if the requesting user is the owner of an existing document.
+     * Used for safe update and delete operations.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
     }
-    
-    // USERS
-    // A user's public profile
+
+    /**
+     * On create, validates that the new document's internal 'userId' field
+     * matches the owner's ID from the path.
+     */
+    function isOwnerDataConsistentOnCreate(userId) {
+      return request.resource.data.userId == userId;
+    }
+
+    /**
+     * On update, ensures the 'userId' field cannot be changed, preserving
+     * the ownership link.
+     */
+    function isOwnerFieldImmutable() {
+      return request.resource.data.userId == resource.data.userId;
+    }
+
+    /**
+     * On create, validates the User document's 'id' field matches its own UID.
+     */
+    function isUserDocumentDataConsistentOnCreate(userId) {
+      return request.resource.data.id == userId;
+    }
+
+    /**
+     * On update, ensures the User document's 'id' field is immutable.
+     */
+    function isUserDocumentIdImmutable() {
+      return request.resource.data.id == resource.data.id;
+    }
+
+
+    // --------------------------------------------------------------------------
+    // Collection Rules
+    // --------------------------------------------------------------------------
+
+    /**
+     * @description Publicly readable product catalog. No client-side writes are allowed.
+     * @path /shoes/{shoeId}
+     * @allow (get) Any user, signed in or not, can view a specific shoe.
+     * @deny (create) No user can create a new shoe document from the client.
+     * @principle A public read-only collection for globally accessible data.
+     */
+    match /shoes/{shoeId} {
+      allow get, list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    /**
+     * @description A user's own profile document.
+     * @path /users/{userId}
+     * @allow (create) A new user can create their own profile if their UID matches the document ID.
+     * @deny (list) Listing all users is forbidden to protect user privacy.
+     * @deny (update) A user cannot update another user's profile.
+     * @principle Enforces self-creation and ownership of a user's root document.
+     */
     match /users/{userId} {
-      // Anyone can read a user's public profile
-      allow get: if true;
-      // Only the authenticated owner can create or update their own profile
-      allow create, update: if isSignedIn() && isOwner(userId);
-    }
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId) && isUserDocumentDataConsistentOnCreate(userId);
+      allow update: if isExistingOwner(userId) && isUserDocumentIdImmutable();
+      allow delete: if isExistingOwner(userId);
 
-    // ORDERS
-    // Collection of all customer orders
-    match /orders/{orderId} {
-      // Authenticated users can create an order for themselves.
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      
-      // An owner can read their own order. Admins can read any order.
-      allow get: if isSignedIn() && (isOwner(resource.data.userId) || isAdmin());
-      
-      // Admins can list all orders. Users cannot list all orders.
-      allow list: if isSignedIn() && isAdmin();
+      /**
+       * @description A user's personal shopping cart items.
+       * @path /users/{userId}/cart_items/{cartItemId}
+       * @allow (create) A signed-in user can add an item to their own cart.
+       * @deny (get) A user cannot read items from another user's cart.
+       * @principle Restricts access to a user's own data tree.
+       */
+      match /cart_items/{cartItemId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && isOwnerDataConsistentOnCreate(userId);
+        allow update: if isExistingOwner(userId) && isOwnerFieldImmutable();
+        allow delete: if isExistingOwner(userId);
+      }
 
-      // Admins can update any order.
-      allow update: if isSignedIn() && isAdmin();
+      /**
+       * @description A user's historical orders.
+       * @path /users/{userId}/orders/{orderId}
+       * @allow (list) A signed-in user can list their own past orders.
+       * @deny (delete) A user cannot delete another user's order history.
+       * @principle Restricts access to a user's own data tree.
+       */
+      match /orders/{orderId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && isOwnerDataConsistentOnCreate(userId);
+        allow update: if isExistingOwner(userId) && isOwnerFieldImmutable();
+        allow delete: if isExistingOwner(userId);
+
+        /**
+         * @description The specific items within one of a user's historical orders.
+         * @path /users/{userId}/orders/{orderId}/order_items/{orderItemId}
+         * @allow (get) A signed-in user can view the items within their own order.
+         * @deny (create) A user cannot add items to another user's historical order.
+         * @principle Inherits ownership from the parent path, restricting access to the data owner.
+         */
+        match /order_items/{orderItemId} {
+          allow get, list: if isOwner(userId);
+          // In a real-world scenario, order_items are typically created via a server-side
+          // transaction when an order is placed, not directly by the client.
+          // For prototyping, we allow the owner to create them.
+          allow create: if isOwner(userId);
+          allow update: if false; // Order items should be immutable.
+          allow delete: if false; // Order items should be immutable.
+        }
+      }
+
+      /**
+       * @description AI-powered recommendations for a user.
+       * @path /users/{userId}/recommendations/{recommendationId}
+       * @allow (get) A signed-in user can view their own recommendations.
+       * @deny (list) A user cannot list recommendations for another user.
+       * @principle Restricts access to a user's own data tree.
+       */
+      match /recommendations/{recommendationId} {
+        allow get, list: if isOwner(userId);
+        // Recommendations are typically generated by a backend process, not created
+        // directly by the client. We deny client-side writes for security.
+        allow create: if false;
+        allow update: if false;
+        allow delete: if false;
+      }
     }
   }
 }
