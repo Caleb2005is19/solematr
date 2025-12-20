@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Inter } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import { BrowsingHistoryProvider } from '@/context/browsing-history-context';
+import { FirebaseProvider } from '@/firebase/provider';
 
 const fontBody = Inter({
   subsets: ['latin'],
@@ -30,18 +31,20 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className={cn("font-body antialiased", fontBody.variable)}>
-        <BrowsingHistoryProvider>
-          <CartProvider>
-            <div className="flex flex-col min-h-screen">
-              <Header />
-              <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
-                {children}
-              </main>
-              <Footer />
-            </div>
-            <Toaster />
-          </CartProvider>
-        </BrowsingHistoryProvider>
+        <FirebaseProvider>
+          <BrowsingHistoryProvider>
+            <CartProvider>
+              <div className="flex flex-col min-h-screen">
+                <Header />
+                <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+                  {children}
+                </main>
+                <Footer />
+              </div>
+              <Toaster />
+            </CartProvider>
+          </BrowsingHistoryProvider>
+        </FirebaseProvider>
       </body>
     </html>
   );

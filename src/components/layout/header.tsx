@@ -22,16 +22,27 @@ import {
   SheetClose,
 } from "@/components/ui/sheet";
 import { cn } from '@/lib/utils';
-import React,
-{ useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from '../ui/button';
-import { Menu } from 'lucide-react';
+import { Menu, User, LogIn, LogOut, Shield } from 'lucide-react';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth } from '@/firebase';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
+
 
 const sneakerCategories = [
     { title: "All Sneakers", href:"/sneakers", description: "Explore our entire sneaker collection."},
@@ -46,6 +57,67 @@ const shoeCategories = [
     { title: "Boots", href:"/shoes/boots", description: "Rugged and ready." },
     { title: "Casual", href:"/shoes/casual", description: "Everyday comfort and style." },
 ]
+
+function UserAuthButton() {
+    const { user } = useAuth();
+    const auth = getAuth();
+
+    const handleGoogleSignIn = async () => {
+        const provider = new GoogleAuthProvider();
+        try {
+            await signInWithPopup(auth, provider);
+        } catch (error) {
+            console.error("Error signing in with Google: ", error);
+        }
+    };
+
+    const handleSignOut = async () => {
+        try {
+            await signOut(auth);
+        } catch (error) {
+            console.error("Error signing out: ", error);
+        }
+    };
+    
+    if (user) {
+        return (
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                        <Avatar className="h-9 w-9">
+                            <AvatarImage src={user.photoURL ?? ''} alt={user.displayName ?? 'User'} />
+                            <AvatarFallback>{user.displayName?.charAt(0) ?? 'U'}</AvatarFallback>
+                        </Avatar>
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                    <DropdownMenuLabel className="font-normal">
+                        <div className="flex flex-col space-y-1">
+                            <p className="text-sm font-medium leading-none">{user.displayName}</p>
+                            <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                        </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                        <Link href="/admin/orders"><Shield className="mr-2 h-4 w-4" />Admin Panel</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleSignOut}>
+                        <LogOut className="mr-2 h-4 w-4" />
+                        <span>Log out</span>
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        )
+    }
+
+    return (
+        <Button onClick={handleGoogleSignIn}>
+            <LogIn className="mr-2 h-4 w-4"/>
+            Login
+        </Button>
+    )
+}
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -93,20 +165,20 @@ export default function Header() {
                   </ul>
                 </NavigationMenuContent>
               </NavigationMenuItem>
-
-              <NavigationMenuItem>
-                <NavigationMenuLink asChild className={cn(navigationMenuTriggerStyle(), "font-bold text-red-500")}>
-                  <Link href="/sale">
-                    Sale
-                  </Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
+               <NavigationMenuItem>
+                  <NavigationMenuLink asChild className={cn(navigationMenuTriggerStyle(), "font-bold text-red-500")}>
+                    <Link href="/sale">Sale</Link>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
               
             </NavigationMenuList>
           </NavigationMenu>
         </div>
 
         <div className="flex items-center gap-2">
+            <div className="hidden md:flex">
+                <UserAuthButton />
+            </div>
             <CartIcon />
             {/* Mobile Navigation */}
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
@@ -153,6 +225,9 @@ export default function Header() {
                             <Link href="/sale" className="text-lg font-semibold text-red-500 hover:underline">Sale</Link>
                         </SheetClose>
                     </nav>
+                </div>
+                <div className="absolute bottom-6 left-6 right-6">
+                    <UserAuthButton />
                 </div>
               </SheetContent>
             </Sheet>

@@ -1,0 +1,39 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    // USERS
+    // A user's public profile
+    match /users/{userId} {
+      // Anyone can read a user's public profile
+      allow get: if true;
+      // Only the authenticated owner can create or update their own profile
+      allow create, update: if isSignedIn() && isOwner(userId);
+    }
+
+    // ORDERS
+    // Collection of all customer orders
+    match /orders/{orderId} {
+      // Only authenticated users can create an order for themselves
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      
+      // For now, let's allow any authenticated user to read orders.
+      // In a real app, you'd lock this down to admins/sellers.
+      allow read, list: if isSignedIn();
+
+      // For now, let's allow any authenticated user to update orders (for the seller).
+      // In a real app, you'd use custom claims to verify if a user is an admin.
+      allow update: if isSignedIn();
+    }
+  }
+}

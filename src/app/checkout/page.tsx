@@ -24,6 +24,8 @@ import { useEffect, useState } from 'react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { initiateStkPush } from '@/lib/mpesa';
 import { cn } from '@/lib/utils';
+import { useAuth, useFirestore } from '@/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
@@ -64,15 +66,32 @@ export default function CheckoutPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
+  const { user } = useAuth();
+  const firestore = useFirestore();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: '', name: '', address: '', city: '', postalCode: '', country: 'Kenya',
+      email: user?.email ?? '', 
+      name: user?.displayName ?? '', 
+      address: '', 
+      city: 'Nairobi', 
+      postalCode: '00100', 
+      country: 'Kenya',
       paymentMethod: 'card', mpesaPhone: '',
       cardName: '', cardNumber: '', expiryDate: '', cvc: '',
     },
   });
+  
+  useEffect(() => {
+    if (user) {
+        form.reset({
+            ...form.getValues(),
+            email: user.email ?? '',
+            name: user.displayName ?? '',
+        });
+    }
+  }, [user, form]);
 
   const paymentMethod = form.watch('paymentMethod');
 
@@ -87,6 +106,61 @@ export default function CheckoutPage() {
     return null;
   }
 
+  const createOrderInFirestore = async (values: z.infer<typeof formSchema>) => {
+    if (!user || !firestore) {
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "You must be signed in to place an order.",
+        });
+        return;
+    }
+
+    try {
+        const orderData = {
+            userId: user.uid,
+            customerInfo: {
+                name: values.name,
+                email: values.email,
+                address: values.address,
+                city: values.city,
+                postalCode: values.postalCode,
+                country: values.country,
+            },
+            items: items.map(item => ({
+                shoeId: item.shoeId,
+                name: item.name,
+                price: item.price,
+                size: item.size,
+                quantity: item.quantity,
+                imageUrl: item.image.url,
+            })),
+            totalPrice,
+            paymentMethod: values.paymentMethod,
+            status: 'unfulfilled',
+            createdAt: serverTimestamp(),
+        };
+
+        const docRef = await addDoc(collection(firestore, 'orders'), orderData);
+        console.log("Order created with ID: ", docRef.id);
+        
+        toast({
+            title: "Order Placed Successfully!",
+            description: "Thank you for your purchase. A confirmation has been sent to your email.",
+        });
+        clearCart();
+        router.push('/');
+
+    } catch (error) {
+        console.error("Error creating order:", error);
+        toast({
+            variant: "destructive",
+            title: "Order Failed",
+            description: "Could not save your order. Please try again.",
+        });
+    }
+  }
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsProcessing(true);
 
@@ -96,39 +170,24 @@ export default function CheckoutPage() {
             description: `Sending STK push to ${values.mpesaPhone}. Please check your phone to complete the transaction.`,
         });
         try {
-            // In a real app, you would call your backend which then calls Safaricom API
             await initiateStkPush(values.mpesaPhone!, totalPrice);
-            
-            toast({
-                title: "Payment Successful!",
-                description: "Your M-Pesa payment has been received.",
-            });
-            
-            completeOrder();
-
+            await createOrderInFirestore(values);
         } catch (error) {
              toast({
                 variant: "destructive",
                 title: "M-Pesa Payment Failed",
                 description: (error as Error).message || "Could not process the M-Pesa payment. Please try again.",
             });
+        } finally {
             setIsProcessing(false);
         }
     } else { // Credit Card Payment
-        // In a real app, you would process the payment here with a payment gateway.
         console.log("Processing credit card payment", values);
-        completeOrder();
+        await createOrderInFirestore(values);
+        setIsProcessing(false);
     }
   };
 
-  const completeOrder = () => {
-    toast({
-        title: "Order Placed Successfully!",
-        description: "Thank you for your purchase. A confirmation has been sent to your email.",
-    });
-    clearCart();
-    router.push('/');
-  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
@@ -259,10 +318,11 @@ export default function CheckoutPage() {
                 </Card>
             </div>
             
-            <Button type="submit" size="lg" className="w-full text-lg" disabled={isProcessing}>
+            <Button type="submit" size="lg" className="w-full text-lg" disabled={isProcessing || !user}>
                 <Lock className="mr-2 h-5 w-5" />
                 {isProcessing ? 'Processing...' : `Pay securely - KSH ${totalPrice.toFixed(2)}`}
             </Button>
+            {!user && <p className="text-sm text-center text-destructive">Please sign in to place an order.</p>}
           </form>
         </Form>
       </div>
