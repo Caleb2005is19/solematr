@@ -1,27 +1,25 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { CartProvider } from '@/context/cart-context';
-import { BrowsingHistoryProvider } from '@/context/browsing-history-context';
 import Header from '@/components/layout/header';
 import Footer from '@/components/layout/footer';
 import { Toaster } from "@/components/ui/toaster";
-import { Inter, Poppins } from 'next/font/google';
+import { Inter } from 'next/font/google';
 import { cn } from '@/lib/utils';
+import { BrowsingHistoryProvider } from '@/context/browsing-history-context';
 
 const fontBody = Inter({
   subsets: ['latin'],
   variable: '--font-body',
 });
 
-const fontHeadline = Poppins({
-  subsets: ['latin'],
-  weight: ['700'],
-  variable: '--font-headline',
-});
-
 export const metadata: Metadata = {
-  title: 'SoleMate Kenya',
-  description: 'Step into Greatness. The Sole of Kenya.',
+  title: {
+    default: 'SoleMate - The Sole of Kenya.',
+    template: '%s | SoleMate',
+  },
+  description: 'Step into Greatness. The best collection of sneakers, shoes, and boots in Kenya. Quality footwear for every style.',
+  keywords: ['sneakers Kenya', 'shoe store Nairobi', 'buy shoes online Kenya', 'mens shoes Kenya', 'womens shoes Kenya'],
 };
 
 export default function RootLayout({
@@ -31,7 +29,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={cn("font-body antialiased", fontBody.variable, fontHeadline.variable)}>
+      <body className={cn("font-body antialiased", fontBody.variable)}>
         <BrowsingHistoryProvider>
           <CartProvider>
             <div className="flex flex-col min-h-screen">

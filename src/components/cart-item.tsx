@@ -7,6 +7,7 @@ import { useCart } from '@/hooks/use-cart';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Minus, Plus, Trash2 } from 'lucide-react';
+import { SheetClose } from './ui/sheet';
 
 interface CartItemProps {
   item: CartItemType;
@@ -21,18 +22,23 @@ export default function CartItem({ item }: CartItemProps) {
   
   return (
     <div className="flex items-start gap-4">
-      <div className="relative h-24 w-24 overflow-hidden rounded-md">
-        <Image
-          src={item.image.url}
-          alt={item.image.alt}
-          fill
-          className="object-cover"
-        />
-      </div>
-      <div className="flex-1">
-        <Link href={`/${item.shoeId}`} className="hover:underline">
-          <h3 className="font-semibold">{item.name}</h3>
+      <SheetClose asChild>
+        <Link href={`/product/${item.shoeId}`} className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-md">
+            <Image
+            src={item.image.url}
+            alt={item.image.alt}
+            fill
+            sizes="96px"
+            className="object-cover"
+            />
         </Link>
+      </SheetClose>
+      <div className="flex-1">
+        <SheetClose asChild>
+            <Link href={`/product/${item.shoeId}`} className="hover:underline">
+                <h3 className="font-semibold">{item.name}</h3>
+            </Link>
+        </SheetClose>
         <p className="text-sm text-muted-foreground">Size: {item.size}</p>
         <p className="text-sm font-medium">KSH {item.price.toFixed(2)}</p>
         <div className="mt-2 flex items-center gap-2">

@@ -1,8 +1,8 @@
 export type Shoe = {
-  id: string;
+  id: string; // This will be the slug
   name: string;
   brand: string;
-  style: string;
+  style: string; // e.g. 'Running', 'Casual'
   price: number;
   description: string;
   images: {
@@ -20,7 +20,9 @@ export type Shoe = {
     date: string;
   }[];
   gender: 'Men' | 'Women' | 'Unisex';
-  category: string;
+  category: string; // e.g. 'Streetwear', 'Formal'
+  type: 'Sneakers' | 'Shoes'; // Main grouping
+  isOnSale?: boolean;
 };
 
 export type CartItem = {

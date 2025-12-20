@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useBrowsingHistory } from '@/hooks/use-browsing-history-hook';
-import { getShoeById } from '@/lib/data';
+import { getShoeBySlug } from '@/lib/data'; // Changed to getShoeBySlug
 import type { Shoe } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { History } from 'lucide-react';
@@ -23,7 +23,8 @@ export default function RecentlyViewed() {
       }
       
       setLoading(true);
-      const shoePromises = history.map(id => getShoeById(id));
+      // Fetch by slug (which is the shoe ID)
+      const shoePromises = history.map(slug => getShoeBySlug(slug));
       const results = await Promise.all(shoePromises);
       setViewedShoes(results.filter((shoe): shoe is Shoe => shoe !== undefined));
       setLoading(false);
@@ -53,12 +54,13 @@ export default function RecentlyViewed() {
           </>
         ) : (
           viewedShoes.map(shoe => (
-            <Link key={shoe.id} href={`/${shoe.id}`} className="flex items-center gap-3 group">
+            <Link key={shoe.id} href={`/product/${shoe.id}`} className="flex items-center gap-3 group">
               <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-md border">
                 <Image
                   src={shoe.images[0].url}
                   alt={shoe.images[0].alt}
                   fill
+                  sizes="56px"
                   className="object-cover transition-transform group-hover:scale-105"
                 />
               </div>

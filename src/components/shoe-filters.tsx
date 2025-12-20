@@ -17,15 +17,14 @@ interface ShoeFiltersProps {
   styles: string[];
   sizes: number[];
   genders: string[];
-  categories: string[];
 }
 
-export default function ShoeFilters({ brands, styles, sizes, genders, categories }: ShoeFiltersProps) {
+export default function ShoeFilters({ brands, styles, sizes, genders }: ShoeFiltersProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const handleFilterChange = (type: 'brand' | 'style' | 'size' | 'gender' | 'category', value: string) => {
+  const handleFilterChange = (type: 'brand' | 'style' | 'size' | 'gender', value: string) => {
     const current = new URLSearchParams(Array.from(searchParams.entries()));
     
     if (!value || value === 'all') {
@@ -36,14 +35,14 @@ export default function ShoeFilters({ brands, styles, sizes, genders, categories
 
     const search = current.toString();
     const query = search ? `?${search}` : '';
-    router.push(`${pathname}${query}#products`);
+    router.push(`${pathname}${query}`);
   };
   
   const clearFilters = () => {
-    router.push(`${pathname}#products`);
+    router.push(`${pathname}`);
   };
 
-  const hasFilters = searchParams.has('brand') || searchParams.has('style') || searchParams.has('size') || searchParams.has('gender') || searchParams.has('category');
+  const hasFilters = searchParams.has('brand') || searchParams.has('style') || searchParams.has('size') || searchParams.has('gender');
 
   return (
     <Card>
@@ -59,7 +58,7 @@ export default function ShoeFilters({ brands, styles, sizes, genders, categories
       <CardContent className="space-y-4">
         <div className="space-y-2">
           <label className="text-sm font-medium">Brand</label>
-          <Select onValueChange={(value) => handleFilterChange('brand', value)} defaultValue={searchParams.get('brand') || 'all'}>
+          <Select onValueChange={(value) => handleFilterChange('brand', value)} value={searchParams.get('brand') ?? undefined}>
             <SelectTrigger>
               <SelectValue placeholder="All Brands" />
             </SelectTrigger>
@@ -73,7 +72,7 @@ export default function ShoeFilters({ brands, styles, sizes, genders, categories
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium">Gender</label>
-          <Select onValueChange={(value) => handleFilterChange('gender', value)} defaultValue={searchParams.get('gender') || 'all'}>
+          <Select onValueChange={(value) => handleFilterChange('gender', value)} value={searchParams.get('gender') ?? undefined}>
             <SelectTrigger>
               <SelectValue placeholder="All Genders" />
             </SelectTrigger>
@@ -86,22 +85,8 @@ export default function ShoeFilters({ brands, styles, sizes, genders, categories
           </Select>
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium">Category</label>
-          <Select onValueChange={(value) => handleFilterChange('category', value)} defaultValue={searchParams.get('category') || 'all'}>
-            <SelectTrigger>
-              <SelectValue placeholder="All Categories" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {categories.map((category) => (
-                <SelectItem key={category} value={category}>{category}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
           <label className="text-sm font-medium">Style</label>
-          <Select onValueChange={(value) => handleFilterChange('style', value)} defaultValue={searchParams.get('style') || 'all'}>
+          <Select onValueChange={(value) => handleFilterChange('style', value)} value={searchParams.get('style') ?? undefined}>
             <SelectTrigger>
               <SelectValue placeholder="All Styles" />
             </SelectTrigger>
@@ -115,7 +100,7 @@ export default function ShoeFilters({ brands, styles, sizes, genders, categories
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium">Size</label>
-          <Select onValueChange={(value) => handleFilterChange('size', value)} defaultValue={searchParams.get('size') || 'all'}>
+          <Select onValueChange={(value) => handleFilterChange('size', value)} value={searchParams.get('size') ?? undefined}>
             <SelectTrigger>
               <SelectValue placeholder="All Sizes" />
             </SelectTrigger>
