@@ -71,10 +71,8 @@ export default function Header() {
               </NavigationMenuItem>
 
               <NavigationMenuItem>
-                <Link href="/sale" legacyBehavior={false}>
-                  <div className={cn(navigationMenuTriggerStyle(), "font-bold text-red-500")}>
-                    Sale
-                  </div>
+                <Link href="/sale" className={cn(navigationMenuTriggerStyle(), "font-bold text-red-500")}>
+                  Sale
                 </Link>
               </NavigationMenuItem>
               
