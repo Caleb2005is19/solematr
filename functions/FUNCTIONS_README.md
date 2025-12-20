@@ -40,17 +40,19 @@ First, you need a regular user account that you want to promote to an admin.
 
 Once you have created your account, you need to find its unique User ID (UID).
 
-1.  Log in to the **Firebase Console**.
+1.  Log in to the **[Firebase Console](https://console.firebase.google.com/)**.
 2.  Select your project: **`studio-9165057693-5c1af`**.
 3.  In the left-hand menu, go to **Build > Authentication**.
 4.  In the **Users** tab, you will see a list of all users who have signed up for your app. Find the user account you just created.
 5.  Copy the **User UID** for that account. It's a long string of letters and numbers (e.g., `gHZ9n7s2b9X8fJ2kP3s5t8YxVOE2`).
 
+**Why do you need the UID?** The UID is your account's unique identifier in Firebase. To create the first admin, you will run a secure script that tells Firebase exactly *which user* to grant admin privileges to. The UID is how you specify that user.
+
 ### Step 3: Manually Set the First Admin (One-Time Setup)
 
 The `setUserRole` function requires the caller to already be an admin. To create your *first* admin user, you must do it manually from a secure environment that has the Firebase Admin SDK configured.
 
-1.  **Create a temporary script:** Create a file named `setAdmin.js` in a secure location on your computer (do not add this file to your project).
+1.  **Create a temporary script:** On your local computer, create a file named `setAdmin.js` in a secure folder (do not add this file to your project repository).
 2.  **Download your service account key** from the Firebase Console:
     *   Go to **Project Settings > Service accounts**.
     *   Click "**Generate new private key**". A JSON file will be downloaded. Place it in the same directory as your `setAdmin.js` script.
@@ -66,6 +68,7 @@ The `setUserRole` function requires the caller to already be an admin. To create
       credential: admin.credential.cert(serviceAccount)
     });
 
+    // IMPORTANT: Paste the UID you copied from the Firebase Console here.
     const uid = '<USER_UID_TO_MAKE_ADMIN>';
 
     admin.auth().setCustomUserClaims(uid, { admin: true })
@@ -78,8 +81,8 @@ The `setUserRole` function requires the caller to already be an admin. To create
         process.exit(1);
       });
     ```
-4. **Run the script:**
-   From your terminal, run `node setAdmin.js`. The specified user is now an admin.
+4. **Install the dependency:** In your terminal, in the same folder as your script, run `npm install firebase-admin`.
+5. **Run the script:** From your terminal, run `node setAdmin.js`. The specified user is now an admin.
 
 ### Step 4: Access the Admin Dashboard
 
