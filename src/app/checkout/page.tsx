@@ -266,7 +266,7 @@ export default function CheckoutPage() {
           </form>
         </Form>
       </div>
-      <div className="lg:col-span-1">
+      <div className="lg:col-span-1 lg:order-first">
         <Card className="sticky top-24">
             <CardHeader>
                 <CardTitle>Your Order</CardTitle>

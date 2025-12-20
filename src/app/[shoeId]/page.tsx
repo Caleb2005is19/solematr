@@ -32,7 +32,7 @@ export default async function ShoeDetailPage({ params }: { params: { shoeId: str
               {shoe.images.map((image, index) => (
                 <CarouselItem key={index}>
                   <Card className="overflow-hidden rounded-xl">
-                    <CardContent className="flex aspect-video items-center justify-center p-0">
+                    <CardContent className="flex aspect-square md:aspect-video items-center justify-center p-0">
                       <Image
                         src={image.url}
                         alt={image.alt}
@@ -47,8 +47,12 @@ export default async function ShoeDetailPage({ params }: { params: { shoeId: str
                 </CarouselItem>
               ))}
             </CarouselContent>
-            <CarouselPrevious className="ml-14" />
-            <CarouselNext className="mr-14" />
+            {shoe.images.length > 1 && (
+              <>
+                <CarouselPrevious className="ml-14" />
+                <CarouselNext className="mr-14" />
+              </>
+            )}
           </Carousel>
         </div>
         
@@ -58,9 +62,9 @@ export default async function ShoeDetailPage({ params }: { params: { shoeId: str
                 <p className="text-sm font-medium text-primary uppercase tracking-wider">{shoe.brand}</p>
                 <Separator orientation="vertical" className="h-4" />
                 <Badge variant="secondary">{shoe.gender}</Badge>
-                <Badge variant="secondary">{shoe.category}</Badge>
+                <Badge variant="outline">{shoe.category}</Badge>
             </div>
-            <h1 className="text-4xl lg:text-5xl font-bold font-headline tracking-tight">{shoe.name}</h1>
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight">{shoe.name}</h1>
             <p className="mt-2 text-3xl font-bold">KSH {shoe.price.toFixed(2)}</p>
           </div>
 

@@ -82,7 +82,7 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
               {shoe.images.map((image, index) => (
                 <CarouselItem key={index}>
                   <Card className="overflow-hidden rounded-xl border-none">
-                    <CardContent className="flex aspect-video items-center justify-center p-0">
+                    <CardContent className="flex aspect-square md:aspect-video items-center justify-center p-0">
                       <Image
                         src={image.url}
                         alt={image.alt}
@@ -114,7 +114,7 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
                 <Badge variant="secondary">{shoe.gender}</Badge>
                 <Badge variant="outline">{shoe.category}</Badge>
             </div>
-            <h1 className="text-4xl lg:text-5xl font-bold tracking-tight">{shoe.name}</h1>
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight">{shoe.name}</h1>
             <p className="mt-2 text-3xl font-bold">KSH {shoe.price.toFixed(2)}</p>
           </div>
 
@@ -145,8 +145,8 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
       
       {relatedProducts.length > 0 && (
         <div className="mt-16">
-          <h2 className="text-3xl font-bold tracking-tight mb-8">Related Products</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-8">Related Products</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
             {relatedProducts.map(relatedShoe => (
               <ShoeCard key={relatedShoe.id} shoe={relatedShoe} />
             ))}

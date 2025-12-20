@@ -12,27 +12,47 @@ import {
   NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu"
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetClose,
+} from "@/components/ui/sheet";
 import { cn } from '@/lib/utils';
-import React from 'react';
+import React, { useState } from 'react';
+import { Button } from '../ui/button';
+import { Menu } from 'lucide-react';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 const sneakerCategories = [
+    { title: "All Sneakers", href:"/sneakers", description: "Explore our entire sneaker collection."},
     { title: "Streetwear", href:"/sneakers/streetwear", description: "Style for the streets." },
     { title: "Running", href:"/sneakers/running", description: "Performance and comfort." },
     { title: "Basketball", href:"/sneakers/basketball", description: "Dominate the court." },
 ]
 
 const shoeCategories = [
+    { title: "All Shoes", href:"/shoes", description: "Discover our full range of shoes."},
     { title: "Formal", href:"/shoes/formal", description: "Elegance for any occasion." },
     { title: "Boots", href:"/shoes/boots", description: "Rugged and ready." },
     { title: "Casual", href:"/shoes/casual", description: "Everyday comfort and style." },
 ]
 
 export default function Header() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur-sm">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
         <Logo />
-        <div className="flex items-center gap-4">
+
+        {/* Desktop Navigation */}
+        <div className="hidden lg:flex items-center gap-4">
           <NavigationMenu>
             <NavigationMenuList>
               
@@ -71,15 +91,66 @@ export default function Header() {
               </NavigationMenuItem>
 
               <NavigationMenuItem>
-                <Link href="/sale" className={cn(navigationMenuTriggerStyle(), "font-bold text-red-500")}>
-                  Sale
+                <Link href="/sale" legacyBehavior passHref>
+                  <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "font-bold text-red-500")}>
+                    Sale
+                  </NavigationMenuLink>
                 </Link>
               </NavigationMenuItem>
               
             </NavigationMenuList>
           </NavigationMenu>
-          <CartIcon />
         </div>
+
+        <div className="flex items-center gap-2">
+            <CartIcon />
+            {/* Mobile Navigation */}
+            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+              <SheetTrigger asChild className="lg:hidden">
+                <Button variant="outline" size="icon">
+                  <Menu className="h-6 w-6" />
+                  <span className="sr-only">Open main menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left">
+                <div className="p-4">
+                    <Logo onClick={() => setIsMobileMenuOpen(false)} />
+                    <nav className="mt-8 flex flex-col gap-4">
+                        <Accordion type="single" collapsible className="w-full">
+                            <AccordionItem value="sneakers">
+                                <AccordionTrigger className="text-lg font-semibold">Sneakers</AccordionTrigger>
+                                <AccordionContent>
+                                    <div className="flex flex-col gap-4 pl-4">
+                                        {sneakerCategories.map(item => (
+                                            <SheetClose asChild key={item.title}>
+                                                <Link href={item.href} className="hover:text-primary">{item.title}</Link>
+                                            </SheetClose>
+                                        ))}
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
+                            <AccordionItem value="shoes">
+                                <AccordionTrigger className="text-lg font-semibold">Shoes</AccordionTrigger>
+                                <AccordionContent>
+                                    <div className="flex flex-col gap-4 pl-4">
+                                        {shoeCategories.map(item => (
+                                            <SheetClose asChild key={item.title}>
+                                                <Link href={item.href} className="hover:text-primary">{item.title}</Link>
+                                            </SheetClose>
+                                        ))}
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Accordion>
+                        <SheetClose asChild>
+                            <Link href="/sale" className="text-lg font-semibold text-red-500 hover:underline">Sale</Link>
+                        </SheetClose>
+                    </nav>
+                </div>
+              </SheetContent>
+            </Sheet>
+        </div>
+
       </div>
     </header>
   );

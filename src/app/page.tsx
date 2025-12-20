@@ -21,7 +21,7 @@ export default async function HomePage() {
   return (
     <div className="flex flex-col gap-12 md:gap-16">
       {/* Hero Section */}
-      <section className="relative h-[60vh] md:h-[70vh] w-full flex items-center justify-center rounded-2xl overflow-hidden text-center text-white p-4">
+      <section className="relative h-[50vh] md:h-[60vh] w-full flex items-center justify-center rounded-2xl overflow-hidden text-center text-white p-4">
         <div className="absolute inset-0 bg-black/50 z-10" />
         <Image 
           src="https://images.unsplash.com/photo-1549298916-b41d501d3772?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxuaWtlJTIwc2hvZXN8ZW58MHx8fHwxNzU5NTQwODU0fDA&ixlib=rb-4.1.0&q=80&w=1080"
@@ -32,8 +32,8 @@ export default async function HomePage() {
           priority
         />
         <div className="relative z-20 flex flex-col items-center gap-4">
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-shadow-lg">Step into Greatness</h1>
-          <p className="text-lg md:text-2xl max-w-2xl text-shadow">The Sole of Kenya. Unbeatable style, unmatched performance.</p>
+          <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-shadow-lg">Step into Greatness</h1>
+          <p className="text-lg md:text-xl max-w-2xl text-shadow">The Sole of Kenya. Unbeatable style, unmatched performance.</p>
           <Button asChild size="lg" className="mt-4">
             <Link href="/sneakers">
               Explore Now <ArrowRight className="ml-2 h-5 w-5" />
@@ -44,7 +44,7 @@ export default async function HomePage() {
 
       {/* Shop by Style */}
       <section>
-          <h2 className="text-3xl font-bold tracking-tight text-center mb-2">Find Your Vibe</h2>
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-center mb-2">Find Your Vibe</h2>
           <p className="text-center text-muted-foreground mb-8 max-w-2xl mx-auto">Whatever your style, we've got the shoes to match. Explore our curated collections to find the perfect pair that speaks to you.</p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
               {popularCategories.map(category => (
@@ -55,12 +55,13 @@ export default async function HomePage() {
                                   src={category.image}
                                   alt={`A shoe representing the ${category.name} style`}
                                   fill
+                                  sizes="(max-width: 768px) 50vw, 25vw"
                                   className="object-cover transition-transform duration-300 ease-in-out group-hover:scale-105"
                               />
                           </div>
                           <div className="absolute inset-0 bg-black/40" />
                           <div className="absolute bottom-0 left-0 p-4">
-                              <h3 className="text-white text-lg lg:text-xl font-bold">{category.name}</h3>
+                              <h3 className="text-white text-lg font-bold">{category.name}</h3>
                           </div>
                       </Card>
                   </Link>
@@ -70,8 +71,8 @@ export default async function HomePage() {
       
       {/* New Arrivals Section */}
       <section>
-        <h2 className="text-3xl font-bold tracking-tight text-center mb-8">New Arrivals</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-center mb-8">New Arrivals</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
           {newArrivals.map((shoe) => (
             <ShoeCard key={shoe.id} shoe={shoe} />
           ))}
@@ -83,7 +84,9 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <RecentlyViewed />
+      <div className="lg:hidden">
+        <RecentlyViewed />
+      </div>
     </div>
   );
 }
