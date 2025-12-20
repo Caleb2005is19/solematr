@@ -184,10 +184,12 @@ export default function Header() {
                 </NavigationMenuContent>
               </NavigationMenuItem>
                <NavigationMenuItem>
-                  <NavigationMenuLink asChild className={cn(navigationMenuTriggerStyle(), "font-bold text-red-500")}>
-                    <Link href="/sale">Sale</Link>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
+                <NavigationMenuLink asChild className={cn(navigationMenuTriggerStyle(), "font-bold text-red-500")}>
+                  <Link href="/sale">
+                    Sale
+                  </Link>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
               
             </NavigationMenuList>
           </NavigationMenu>
