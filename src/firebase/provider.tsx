@@ -4,6 +4,8 @@ import type { FirebaseApp } from 'firebase/app';
 import type { Auth } from 'firebase/auth';
 import type { Firestore } from 'firebase/firestore';
 import { initializeFirebase } from '.';
+import { useUser } from './auth/use-user';
+
 
 type FirebaseContextValue = {
   app: FirebaseApp;
@@ -37,4 +39,4 @@ export const useAuth = (): Auth & { user: import('firebase/auth').User | null } 
 };
 
 // Re-export from index for convenience
-export { useUser, useCollection, useDoc } from '.';
+export { useCollection, useDoc } from '.';
