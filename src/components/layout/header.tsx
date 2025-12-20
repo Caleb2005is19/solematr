@@ -95,11 +95,11 @@ export default function Header() {
               </NavigationMenuItem>
 
               <NavigationMenuItem>
-                 <Link href="/sale" legacyBehavior passHref>
-                  <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "font-bold text-red-500")}>
+                <NavigationMenuLink asChild className={cn(navigationMenuTriggerStyle(), "font-bold text-red-500")}>
+                  <Link href="/sale">
                     Sale
-                  </NavigationMenuLink>
-                </Link>
+                  </Link>
+                </NavigationMenuLink>
               </NavigationMenuItem>
               
             </NavigationMenuList>
