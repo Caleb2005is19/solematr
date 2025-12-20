@@ -10,19 +10,23 @@ import RecentlyViewed from '@/components/recently-viewed';
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: { brand?: string; style?: string; size?: string };
+  searchParams: { brand?: string; style?: string; size?: string; gender?: string; category?: string; };
 }) {
   const allShoes = await getShoes();
 
   const brands = [...new Set(allShoes.map((shoe) => shoe.brand))];
   const styles = [...new Set(allShoes.map((shoe) => shoe.style))];
   const sizes = [...new Set(allShoes.flatMap(shoe => shoe.sizes))].sort((a,b) => a - b);
+  const genders = [...new Set(allShoes.map((shoe) => shoe.gender))];
+  const categories = [...new Set(allShoes.map((shoe) => shoe.category))];
 
   const filteredShoes = allShoes.filter((shoe) => {
     return (
       (!searchParams.brand || shoe.brand === searchParams.brand) &&
       (!searchParams.style || shoe.style === searchParams.style) &&
-      (!searchParams.size || shoe.sizes.includes(Number(searchParams.size)))
+      (!searchParams.size || shoe.sizes.includes(Number(searchParams.size))) &&
+      (!searchParams.gender || shoe.gender === searchParams.gender) &&
+      (!searchParams.category || shoe.category === searchParams.category)
     );
   });
 
@@ -54,7 +58,7 @@ export default async function HomePage({
       <div id="products" className="grid grid-cols-1 lg:grid-cols-4 gap-8 xl:gap-12">
         <aside className="lg:col-span-1">
           <div className="sticky top-24 space-y-6">
-            <ShoeFilters brands={brands} styles={styles} sizes={sizes} />
+            <ShoeFilters brands={brands} styles={styles} sizes={sizes} genders={genders} categories={categories} />
             <RecentlyViewed />
           </div>
         </aside>

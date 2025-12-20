@@ -15,14 +15,16 @@ interface ShoeFiltersProps {
   brands: string[];
   styles: string[];
   sizes: number[];
+  genders: string[];
+  categories: string[];
 }
 
-export default function ShoeFilters({ brands, styles, sizes }: ShoeFiltersProps) {
+export default function ShoeFilters({ brands, styles, sizes, genders, categories }: ShoeFiltersProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const handleFilterChange = (type: 'brand' | 'style' | 'size', value: string) => {
+  const handleFilterChange = (type: 'brand' | 'style' | 'size' | 'gender' | 'category', value: string) => {
     const current = new URLSearchParams(Array.from(searchParams.entries()));
     
     if (!value || value === 'all') {
@@ -40,7 +42,7 @@ export default function ShoeFilters({ brands, styles, sizes }: ShoeFiltersProps)
     router.push(pathname);
   };
 
-  const hasFilters = searchParams.has('brand') || searchParams.has('style') || searchParams.has('size');
+  const hasFilters = searchParams.has('brand') || searchParams.has('style') || searchParams.has('size') || searchParams.has('gender') || searchParams.has('category');
 
   return (
     <Card>
@@ -58,6 +60,34 @@ export default function ShoeFilters({ brands, styles, sizes }: ShoeFiltersProps)
               <SelectItem value="all">All Brands</SelectItem>
               {brands.map((brand) => (
                 <SelectItem key={brand} value={brand}>{brand}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Gender</label>
+          <Select onValueChange={(value) => handleFilterChange('gender', value)} defaultValue={searchParams.get('gender') || 'all'}>
+            <SelectTrigger>
+              <SelectValue placeholder="All Genders" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Genders</SelectItem>
+              {genders.map((gender) => (
+                <SelectItem key={gender} value={gender}>{gender}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Category</label>
+          <Select onValueChange={(value) => handleFilterChange('category', value)} defaultValue={searchParams.get('category') || 'all'}>
+            <SelectTrigger>
+              <SelectValue placeholder="All Categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {categories.map((category) => (
+                <SelectItem key={category} value={category}>{category}</SelectItem>
               ))}
             </SelectContent>
           </Select>

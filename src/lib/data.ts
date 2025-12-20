@@ -34,6 +34,8 @@ const shoes: Shoe[] = [
       { id: 1, rating: 5, text: 'Incredibly comfortable and stylish. I wear them everywhere!', author: 'Alex D.', date: '2023-05-15' },
       { id: 2, rating: 4.5, text: 'Great for running, very supportive.', author: 'Sam B.', date: '2023-04-22' },
     ],
+    gender: 'Unisex',
+    category: 'Athletic'
   },
   {
     id: 'high-top-sneaker',
@@ -48,6 +50,8 @@ const shoes: Shoe[] = [
       { id: 1, rating: 5, text: 'Love the look and feel of these. So many compliments!', author: 'Jessie R.', date: '2023-06-01' },
       { id: 2, rating: 5, text: 'The quality is top-notch. Worth every penny.', author: 'Mike T.', date: '2023-05-28' },
     ],
+    gender: 'Unisex',
+    category: 'Streetwear'
   },
   {
     id: 'suede-loafer',
@@ -61,6 +65,8 @@ const shoes: Shoe[] = [
     reviews: [
       { id: 1, rating: 4, text: 'Very classy and comfortable for long events.', author: 'Charles P.', date: '2023-03-19' },
     ],
+    gender: 'Men',
+    category: 'Classic'
   },
   {
     id: 'leather-boot',
@@ -75,6 +81,8 @@ const shoes: Shoe[] = [
       { id: 1, rating: 5, text: 'The best boots I\'ve ever owned. Sturdy and comfortable.', author: 'Ben L.', date: '2023-01-10' },
       { id: 2, rating: 5, text: 'Perfect for hiking and they look great too.', author: 'Kara S.', date: '2022-12-05' },
     ],
+    gender: 'Unisex',
+    category: 'Outdoor'
   },
   {
     id: 'sport-sandal',
@@ -88,6 +96,8 @@ const shoes: Shoe[] = [
     reviews: [
       { id: 1, rating: 4, text: 'Super comfy for walking around all day.', author: 'Maria G.', date: '2023-07-11' },
     ],
+    gender: 'Unisex',
+    category: 'Outdoor'
   },
   {
     id: 'urban-explorer',
@@ -102,6 +112,8 @@ const shoes: Shoe[] = [
       { id: 1, rating: 5, text: 'Feels like walking on clouds. The design is sick!', author: 'Leo F.', date: '2023-06-25' },
       { id: 2, rating: 4, text: 'Good looking shoe, but took a day to break in.', author: 'Nina K.', date: '2023-06-20' },
     ],
+    gender: 'Unisex',
+    category: 'Streetwear'
   },
   {
     id: 'vintage-wingtip',
@@ -115,6 +127,8 @@ const shoes: Shoe[] = [
     reviews: [
       { id: 1, rating: 5, text: 'Absolutely stunning craftsmanship.', author: 'Arthur M.', date: '2023-02-14' },
     ],
+    gender: 'Men',
+    category: 'Classic'
   },
   {
     id: 'canvas-slip-on',
@@ -129,6 +143,8 @@ const shoes: Shoe[] = [
       { id: 1, rating: 5, text: 'My favorite summer shoes. So easy to wear.', author: 'Chloe T.', date: '2023-07-02' },
       { id: 2, rating: 4, text: 'Comfortable and versatile.', author: 'David S.', date: '2023-06-15' },
     ],
+    gender: 'Unisex',
+    category: 'Lifestyle'
   },
 ];
 

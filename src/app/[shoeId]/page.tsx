@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import { getShoeById } from '@/lib/data';
 import { notFound } from 'next/navigation';
-
+import { Badge } from '@/components/ui/badge';
 import {
   Carousel,
   CarouselContent,
@@ -54,7 +54,12 @@ export default async function ShoeDetailPage({ params }: { params: { shoeId: str
         
         <div className="flex flex-col gap-6">
           <div>
-            <p className="text-sm font-medium text-primary uppercase tracking-wider">{shoe.brand}</p>
+             <div className="flex items-center gap-2 mb-2">
+                <p className="text-sm font-medium text-primary uppercase tracking-wider">{shoe.brand}</p>
+                <Separator orientation="vertical" className="h-4" />
+                <Badge variant="secondary">{shoe.gender}</Badge>
+                <Badge variant="secondary">{shoe.category}</Badge>
+            </div>
             <h1 className="text-4xl lg:text-5xl font-bold font-headline tracking-tight">{shoe.name}</h1>
             <p className="mt-2 text-3xl font-bold">KSH {shoe.price.toFixed(2)}</p>
           </div>

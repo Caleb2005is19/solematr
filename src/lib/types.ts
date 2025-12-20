@@ -19,6 +19,8 @@ export type Shoe = {
     author: string;
     date: string;
   }[];
+  gender: 'Men' | 'Women' | 'Unisex';
+  category: string;
 };
 
 export type CartItem = {
