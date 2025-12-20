@@ -91,7 +91,7 @@ export default function Header() {
               </NavigationMenuItem>
 
               <NavigationMenuItem>
-                <Link href="/sale" legacyBehavior passHref>
+                <Link href="/sale" passHref>
                   <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "font-bold text-red-500")}>
                     Sale
                   </NavigationMenuLink>
@@ -159,7 +159,7 @@ export default function Header() {
 
 const ListItem = React.forwardRef<
   React.ElementRef<"a">,
-  React.ComponentPropsWithoutRef<typeof Link> & { title: string }
+  Omit<React.ComponentPropsWithoutRef<typeof Link>, "href"> & { title: string; href: string; }
 >(({ className, title, children, href, ...props }, ref) => {
   return (
     <li>
