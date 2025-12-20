@@ -9,6 +9,7 @@ import {
   SheetTitle,
   SheetFooter,
   SheetClose,
+  SheetDescription,
 } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -22,6 +23,9 @@ export default function CartSheet() {
     <SheetContent className="flex w-full flex-col pr-0 sm:max-w-lg">
       <SheetHeader className="px-6">
         <SheetTitle>Shopping Cart ({totalItems})</SheetTitle>
+        <SheetDescription>
+            Review your items and proceed to checkout.
+        </SheetDescription>
       </SheetHeader>
       <Separator />
       {items.length > 0 ? (

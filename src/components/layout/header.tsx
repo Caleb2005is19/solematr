@@ -15,6 +15,9 @@ import {
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
   SheetTrigger,
   SheetClose,
 } from "@/components/ui/sheet";
@@ -91,7 +94,7 @@ export default function Header() {
               </NavigationMenuItem>
 
               <NavigationMenuItem>
-                <Link href="/sale" passHref>
+                 <Link href="/sale" passHref>
                   <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "font-bold text-red-500")}>
                     Sale
                   </NavigationMenuLink>
@@ -113,9 +116,12 @@ export default function Header() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="left">
-                <div className="p-4">
-                    <Logo onClick={() => setIsMobileMenuOpen(false)} />
-                    <nav className="mt-8 flex flex-col gap-4">
+                <SheetHeader>
+                  <SheetTitle className="mb-4"><Logo onClick={() => setIsMobileMenuOpen(false)} /></SheetTitle>
+                  <SheetDescription className="sr-only">Main menu</SheetDescription>
+                </SheetHeader>
+                <div className="mt-4">
+                    <nav className="flex flex-col gap-4">
                         <Accordion type="single" collapsible className="w-full">
                             <AccordionItem value="sneakers">
                                 <AccordionTrigger className="text-lg font-semibold">Sneakers</AccordionTrigger>
