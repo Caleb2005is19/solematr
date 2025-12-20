@@ -22,7 +22,8 @@ import {
   SheetClose,
 } from "@/components/ui/sheet";
 import { cn } from '@/lib/utils';
-import React, { useState } from 'react';
+import React,
+{ useState } from 'react';
 import { Button } from '../ui/button';
 import { Menu } from 'lucide-react';
 import {
@@ -94,7 +95,7 @@ export default function Header() {
               </NavigationMenuItem>
 
               <NavigationMenuItem>
-                 <Link href="/sale" passHref>
+                 <Link href="/sale" legacyBehavior={false} passHref>
                   <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "font-bold text-red-500")}>
                     Sale
                   </NavigationMenuLink>
@@ -117,7 +118,7 @@ export default function Header() {
               </SheetTrigger>
               <SheetContent side="left">
                 <SheetHeader>
-                  <SheetTitle className="mb-4"><Logo onClick={() => setIsMobileMenuOpen(false)} /></SheetTitle>
+                  <SheetTitle><Logo onClick={() => setIsMobileMenuOpen(false)} /></SheetTitle>
                   <SheetDescription className="sr-only">Main menu</SheetDescription>
                 </SheetHeader>
                 <div className="mt-4">
