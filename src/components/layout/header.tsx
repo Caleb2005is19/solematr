@@ -95,7 +95,7 @@ export default function Header() {
               </NavigationMenuItem>
 
               <NavigationMenuItem>
-                 <Link href="/sale" legacyBehavior={false}>
+                 <Link href="/sale" legacyBehavior passHref>
                   <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "font-bold text-red-500")}>
                     Sale
                   </NavigationMenuLink>
@@ -119,7 +119,7 @@ export default function Header() {
               <SheetContent side="left">
                 <SheetHeader>
                   <SheetTitle><Logo onClick={() => setIsMobileMenuOpen(false)} /></SheetTitle>
-                  <SheetDescription className="sr-only">Main menu</SheetDescription>
+                  <SheetDescription>Main menu for SoleMate</SheetDescription>
                 </SheetHeader>
                 <div className="mt-4">
                     <nav className="flex flex-col gap-4">
