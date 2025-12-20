@@ -18,11 +18,11 @@ import {
   SheetDescription,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
   SheetClose,
+  SheetTrigger,
 } from "@/components/ui/sheet";
 import { cn } from '@/lib/utils';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { Menu, User, LogIn, LogOut, Shield } from 'lucide-react';
 import {
@@ -61,6 +61,18 @@ const shoeCategories = [
 function UserAuthButton() {
     const { user } = useAuth();
     const auth = getAuth();
+    const [isAdmin, setIsAdmin] = useState(false);
+
+    useEffect(() => {
+        if (user) {
+            user.getIdTokenResult().then(idTokenResult => {
+                const isAdminClaim = !!idTokenResult.claims.admin;
+                setIsAdmin(isAdminClaim);
+            });
+        } else {
+            setIsAdmin(false);
+        }
+    }, [user]);
 
     const handleGoogleSignIn = async () => {
         const provider = new GoogleAuthProvider();
@@ -98,8 +110,14 @@ function UserAuthButton() {
                         </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                        <Link href="/admin/orders"><Shield className="mr-2 h-4 w-4" />Admin Panel</Link>
+                    {isAdmin && (
+                        <DropdownMenuItem asChild>
+                            <Link href="/admin/orders"><Shield className="mr-2 h-4 w-4" />Admin Panel</Link>
+                        </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem>
+                        <User className="mr-2 h-4 w-4" />
+                        <span>My Orders</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleSignOut}>

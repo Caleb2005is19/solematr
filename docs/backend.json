@@ -74,16 +74,22 @@
     }
   },
   "auth": {
-    "providers": ["anonymous", "google.com"]
+    "providers": ["anonymous", "google.com"],
+    "customClaims": {
+      "admin": {
+        "type": "boolean",
+        "description": "Determines if a user has administrative privileges."
+      }
+    }
   },
   "firestore": {
     "/users/{userId}": {
       "schema": { "$ref": "#/entities/UserProfile" },
       "description": "Stores public profile information for each user."
     },
-    "/orders": {
+    "/orders/{orderId}": {
       "schema": { "$ref": "#/entities/Order" },
-      "description": "A collection of all customer orders."
+      "description": "A collection of all customer orders. The path is intentionally /orders/{orderId} to reflect a single document."
     }
   }
 }

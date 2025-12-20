@@ -11,6 +11,10 @@ service cloud.firestore {
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
+
+    function isAdmin() {
+      return request.auth.token.admin == true;
+    }
     
     // USERS
     // A user's public profile
@@ -24,16 +28,17 @@ service cloud.firestore {
     // ORDERS
     // Collection of all customer orders
     match /orders/{orderId} {
-      // Only authenticated users can create an order for themselves
+      // Authenticated users can create an order for themselves.
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
       
-      // For now, let's allow any authenticated user to read orders.
-      // In a real app, you'd lock this down to admins/sellers.
-      allow read, list: if isSignedIn();
+      // An owner can read their own order. Admins can read any order.
+      allow get: if isSignedIn() && (isOwner(resource.data.userId) || isAdmin());
+      
+      // Admins can list all orders. Users cannot list all orders.
+      allow list: if isSignedIn() && isAdmin();
 
-      // For now, let's allow any authenticated user to update orders (for the seller).
-      // In a real app, you'd use custom claims to verify if a user is an admin.
-      allow update: if isSignedIn();
+      // Admins can update any order.
+      allow update: if isSignedIn() && isAdmin();
     }
   }
 }
