@@ -24,7 +24,7 @@ import {
 import { cn } from '@/lib/utils';
 import React, { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
-import { Menu, User, LogIn, LogOut, Shield } from 'lucide-react';
+import { Menu, User, LogIn, LogOut, Shield, UserPlus } from 'lucide-react';
 import {
   Accordion,
   AccordionContent,
@@ -38,10 +38,12 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from '@/firebase';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import AuthModal from '@/components/auth-modal';
 
 
 const sneakerCategories = [
@@ -62,6 +64,9 @@ function UserAuthButton() {
     const { user } = useAuth();
     const auth = getAuth();
     const [isAdmin, setIsAdmin] = useState(false);
+    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+    const [authModalType, setAuthModalType] = useState<'signIn' | 'signUp'>('signIn');
+
 
     useEffect(() => {
         if (user) {
@@ -73,16 +78,7 @@ function UserAuthButton() {
             setIsAdmin(false);
         }
     }, [user]);
-
-    const handleGoogleSignIn = async () => {
-        const provider = new GoogleAuthProvider();
-        try {
-            await signInWithPopup(auth, provider);
-        } catch (error) {
-            console.error("Error signing in with Google: ", error);
-        }
-    };
-
+    
     const handleSignOut = async () => {
         try {
             await signOut(auth);
@@ -111,8 +107,11 @@ function UserAuthButton() {
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     {isAdmin && (
-                        <DropdownMenuItem asChild>
-                            <Link href="/admin/orders"><Shield className="mr-2 h-4 w-4" />Admin Panel</Link>
+                         <DropdownMenuItem asChild>
+                            <Link href="/admin/orders">
+                                <Shield className="mr-2 h-4 w-4" />
+                                Admin Panel
+                            </Link>
                         </DropdownMenuItem>
                     )}
                     <DropdownMenuItem>
@@ -130,10 +129,32 @@ function UserAuthButton() {
     }
 
     return (
-        <Button onClick={handleGoogleSignIn}>
-            <LogIn className="mr-2 h-4 w-4"/>
-            Login
-        </Button>
+        <>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button>
+                        <LogIn className="mr-2 h-4 w-4"/>
+                        Login
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                     <DropdownMenuItem onClick={() => { setAuthModalType('signIn'); setIsAuthModalOpen(true); }}>
+                        <LogIn className="mr-2 h-4 w-4" />
+                        <span>Sign In</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => { setAuthModalType('signUp'); setIsAuthModalOpen(true); }}>
+                        <UserPlus className="mr-2 h-4 w-4" />
+                        <span>Sign Up</span>
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+            <AuthModal
+                isOpen={isAuthModalOpen}
+                onOpenChange={setIsAuthModalOpen}
+                type={authModalType}
+                onSwitch={() => setAuthModalType(authModalType === 'signIn' ? 'signUp' : 'signIn')}
+            />
+        </>
     )
 }
 
