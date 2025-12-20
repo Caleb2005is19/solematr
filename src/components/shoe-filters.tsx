@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { X } from 'lucide-react';
 
 interface ShoeFiltersProps {
   brands: string[];
@@ -35,19 +36,25 @@ export default function ShoeFilters({ brands, styles, sizes, genders, categories
 
     const search = current.toString();
     const query = search ? `?${search}` : '';
-    router.push(`${pathname}${query}`);
+    router.push(`${pathname}${query}#products`);
   };
   
   const clearFilters = () => {
-    router.push(pathname);
+    router.push(`${pathname}#products`);
   };
 
   const hasFilters = searchParams.has('brand') || searchParams.has('style') || searchParams.has('size') || searchParams.has('gender') || searchParams.has('category');
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Filters</CardTitle>
+        {hasFilters && (
+          <Button variant="ghost" size="sm" onClick={clearFilters} className="text-xs">
+            <X className="mr-1 h-4 w-4" />
+            Clear
+          </Button>
+        )}
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
@@ -120,11 +127,6 @@ export default function ShoeFilters({ brands, styles, sizes, genders, categories
             </SelectContent>
           </Select>
         </div>
-        {hasFilters && (
-          <Button variant="ghost" onClick={clearFilters} className="w-full">
-            Clear Filters
-          </Button>
-        )}
       </CardContent>
     </Card>
   );
