@@ -15,12 +15,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from '@/components/ui/button';
 import { MoreHorizontal, Package, Users } from 'lucide-react';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useFunctions } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
+import { httpsCallable } from 'firebase/functions';
+import { useState } from 'react';
+import { getDocs, collection } from 'firebase/firestore';
 
 // Define the Order type based on backend.json
 type Order = {
@@ -51,8 +54,6 @@ type Order = {
   };
 };
 
-// This is a simplified User type for the admin panel.
-// In a real app, you might fetch this from a 'users' collection.
 type AppUser = {
     id: string;
     email: string | null;
@@ -177,29 +178,49 @@ function OrdersTab() {
 
 function UsersTab() {
   const { toast } = useToast();
+  const functions = useFunctions();
+  const firestore = useFirestore();
+  const [users, setUsers] = useState<AppUser[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // In a real app, you would fetch the list of users from your backend
-  // or a 'users' collection in Firestore. For this prototype, we'll use mock data.
-  const users: AppUser[] = [
-    { id: 'user-1-abc', email: 'buyer1@example.com', displayName: 'Alex Doe' },
-    { id: 'user-2-xyz', email: 'buyer2@example.com', displayName: 'Samara V' },
-  ];
-
-  const handleMakeAdmin = (userId: string) => {
-    // REAL-WORLD IMPLEMENTATION NOTE:
-    // In a production app, this button would trigger a secure backend process,
-    // like calling a Firebase Cloud Function. The Cloud Function would use the
-    // Firebase Admin SDK to set a custom claim on the user, like:
-    //
-    // admin.auth().setCustomUserClaims(userId, { admin: true });
-    //
-    // This cannot be done securely from the client-side.
+  useState(() => {
+    async function fetchUsers() {
+      if (!firestore) return;
+      setLoading(true);
+      try {
+        // NOTE: In a production app with many users, you would want to paginate this query.
+        const usersSnapshot = await getDocs(collection(firestore, "users"));
+        const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as AppUser[];
+        setUsers(usersList);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+        toast({ variant: 'destructive', title: 'Failed to load users.' });
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchUsers();
+  }, [firestore, toast]);
+  
+  const handleMakeAdmin = async (userId: string) => {
+    if (!functions) return;
+    toast({ title: 'Processing...', description: 'Attempting to grant admin privileges.' });
     
-    toast({
-      title: 'Action Required',
-      description: 'In a real app, this would securely make the user an admin via a backend function.',
-    });
-    console.log(`Simulating "Make Admin" for user: ${userId}`);
+    const setUserRole = httpsCallable(functions, 'setUserRole');
+    try {
+      const result = await setUserRole({ userId, role: 'admin' });
+      toast({
+        title: "Success",
+        description: `User ${userId} has been made an admin. They may need to log out and back in to see changes.`,
+      });
+    } catch (error: any) {
+      console.error("Error setting user role:", error);
+       toast({
+        variant: 'destructive',
+        title: 'Operation Failed',
+        description: error.message || 'You do not have permission to perform this action.',
+      });
+    }
   };
   
   return (
@@ -214,14 +235,25 @@ function UsersTab() {
             <TableRow>
               <TableHead>User</TableHead>
               <TableHead>Email</TableHead>
+              <TableHead>User ID</TableHead>
               <TableHead><span className="sr-only">Actions</span></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users.map(user => (
+             {loading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                 <TableRow key={i}>
+                  <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                  <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                  <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                  <TableCell className="text-right"><Skeleton className="h-8 w-24" /></TableCell>
+                </TableRow>
+              ))
+            ) : users.map(user => (
               <TableRow key={user.id}>
                 <TableCell>{user.displayName || 'N/A'}</TableCell>
                 <TableCell>{user.email}</TableCell>
+                <TableCell className="font-mono text-xs">{user.id}</TableCell>
                 <TableCell className="text-right">
                   <Button variant="outline" size="sm" onClick={() => handleMakeAdmin(user.id)}>
                     Make Admin
