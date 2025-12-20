@@ -95,7 +95,7 @@ export default function Header() {
               </NavigationMenuItem>
 
               <NavigationMenuItem>
-                 <Link href="/sale" legacyBehavior={false} passHref>
+                 <Link href="/sale" legacyBehavior={false}>
                   <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "font-bold text-red-500")}>
                     Sale
                   </NavigationMenuLink>
