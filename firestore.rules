@@ -4,40 +4,32 @@ service cloud.firestore {
 
     /**
      * Core Philosophy: This ruleset implements a dual security model. Product data
-     * (in the /shoes collection) is public and read-only, serving as a global catalog.
+     * (in the /shoes collection) is public and read-only for regular users, serving as a
+     * global catalog. Admin users have full write access to manage the catalog.
      * All user-specific data (profiles, carts, orders) is private and strictly
      * controlled using a user-ownership model.
      *
      * Data Structure: There is a top-level public collection for `/shoes`. All
      * private user data is hierarchically organized under the `/users/{userId}` path.
      * This structure leverages path-based security to ensure users can only access
-     * their own data tree, which includes subcollections for cart items, orders, and
-     * recommendations.
+     * their own data tree.
      *
      * Key Security Decisions:
-     * - Public Catalog: The `/shoes` collection is publicly readable by anyone but
-     *   cannot be modified by clients, ensuring catalog integrity. Data is expected
-     *   to be populated via the Admin SDK.
+     * - Public Catalog: The `/shoes` collection is publicly readable by anyone.
+     * - Admin-Managed Catalog: Only users with an `admin: true` custom claim can
+     *   create, update, or delete shoe documents. This protects the integrity of
+     *   the product catalog.
      * - Strict User Ownership: All data under `/users/{userId}` is accessible only
      *   to the authenticated user whose UID matches `{userId}`.
-     * - Admin Access: Users with an `admin: true` custom claim can read from any
-     *   'orders' collection group, allowing them to view all orders in the system.
+     * - Admin Order Access: Admins can read from any 'orders' collection group,
+     *   allowing them to view all orders in the system for fulfillment.
      * - No User Enumeration: Listing documents in the top-level `/users`
      *   collection is disabled to protect user privacy.
-     * - Relational Integrity: On creation, documents in user subcollections must
-     *   contain a `userId` field that matches the user ID in the path, ensuring
-     *   data consistency and preventing misplaced documents. This field is then
-     *   enforced as immutable.
      *
      * Denormalization for Authorization: The data model is well-designed. By nesting
      * all user-specific data under `/users/{userId}`, the user's ID is part of the
      * path. This allows for simple, fast, and secure authorization rules without
      * needing extra `get()` calls to check ownership on related documents.
-     *
-     * Structural Segregation: The ruleset benefits from a clear separation between
-     * the public `/shoes` collection and the private `/users/{userId}` data trees.
-     * This segregation simplifies rule logic and prevents accidentally exposing
-     * private data in public queries.
      */
 
     // --------------------------------------------------------------------------
@@ -110,17 +102,15 @@ service cloud.firestore {
     // --------------------------------------------------------------------------
 
     /**
-     * @description Publicly readable product catalog. No client-side writes are allowed.
+     * @description Publicly readable product catalog. Writable only by admins.
      * @path /shoes/{shoeId}
-     * @allow (get) Any user, signed in or not, can view a specific shoe.
-     * @deny (create) No user can create a new shoe document from the client.
-     * @principle A public read-only collection for globally accessible data.
+     * @allow (read) Any user, signed in or not, can view the shoe catalog.
+     * @allow (write) Only users with the 'admin' claim can create, update, or delete shoes.
+     * @principle A globally accessible catalog managed by trusted admins.
      */
     match /shoes/{shoeId} {
       allow get, list: if true;
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
+      allow create, update, delete: if isAdmin();
     }
 
     /**
