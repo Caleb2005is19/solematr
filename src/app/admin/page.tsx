@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useCollection, useMemoFirebase } from '@/firebase';
@@ -149,7 +148,7 @@ function OrdersTab({ orders, loading, error }: { orders: Order[] | null, loading
         return;
     };
     const orderRef = doc(firestore, 'users', userId, 'orders', orderId);
-    updateDocumentNonBlocking(orderRef, { status: newStatus });
+    updateDocumentNonBlocking(firestore, orderRef, { status: newStatus });
     toast({
         title: "Order Update Initiated",
         description: `Order status changing to ${newStatus}.`,
@@ -475,7 +474,7 @@ export default function AdminDashboardPage() {
     
     toast({ title: 'Deleting product...' });
     const docRef = doc(firestore, 'shoes', shoeId);
-    deleteDocumentNonBlocking(docRef);
+    deleteDocumentNonBlocking(firestore, docRef);
     toast({ title: 'Product deletion initiated.' });
     setRefreshKey(k => k + 1);
   };

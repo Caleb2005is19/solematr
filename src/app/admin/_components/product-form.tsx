@@ -123,10 +123,10 @@ export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
 
     if (shoe?.id) {
         // Update existing document
-        setDocumentNonBlocking(shoe.id, shoeData);
+        setDocumentNonBlocking(firestore, shoe.id, shoeData);
     } else {
         // Create new document
-        addDocumentNonBlocking(shoeData);
+        addDocumentNonBlocking(firestore, shoeData);
     }
     
     // Optimistically close the form

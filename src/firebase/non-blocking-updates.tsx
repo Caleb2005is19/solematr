@@ -8,19 +8,17 @@ import {
   collection,
   doc,
   DocumentReference,
-  SetOptions,
+  Firestore,
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { useFirestore } from './provider';
 
 
 /**
  * Initiates a setDoc operation for a document reference.
  * Does NOT await the write operation internally.
  */
-export function setDocumentNonBlocking(shoeId: string, data: any) {
-  const firestore = useFirestore();
+export function setDocumentNonBlocking(firestore: Firestore, shoeId: string, data: any) {
   const docRef = doc(firestore, 'shoes', shoeId);
   setDoc(docRef, data, { merge: true }).catch(error => {
     errorEmitter.emit(
@@ -41,8 +39,7 @@ export function setDocumentNonBlocking(shoeId: string, data: any) {
  * Does NOT await the write operation internally.
  * Returns the Promise for the new doc ref, but typically not awaited by caller.
  */
-export function addDocumentNonBlocking(data: any) {
-  const firestore = useFirestore();
+export function addDocumentNonBlocking(firestore: Firestore, data: any) {
   const colRef = collection(firestore, 'shoes');
   const promise = addDoc(colRef, data)
     .catch(error => {
@@ -63,7 +60,7 @@ export function addDocumentNonBlocking(data: any) {
  * Initiates an updateDoc operation for a document reference.
  * Does NOT await the write operation internally.
  */
-export function updateDocumentNonBlocking(docRef: DocumentReference, data: any) {
+export function updateDocumentNonBlocking(firestore: Firestore, docRef: DocumentReference, data: any) {
   updateDoc(docRef, data)
     .catch(error => {
       errorEmitter.emit(
@@ -82,7 +79,7 @@ export function updateDocumentNonBlocking(docRef: DocumentReference, data: any) 
  * Initiates a deleteDoc operation for a document reference.
  * Does NOT await the write operation internally.
  */
-export function deleteDocumentNonBlocking(docRef: DocumentReference) {
+export function deleteDocumentNonBlocking(firestore: Firestore, docRef: DocumentReference) {
   deleteDoc(docRef)
     .catch(error => {
       errorEmitter.emit(
