@@ -27,7 +27,7 @@ import { doc, setDoc, addDoc, collection } from 'firebase/firestore';
 import type { Shoe } from '@/lib/types';
 import { useState } from 'react';
 import { Loader2, Trash2 } from 'lucide-react';
-import { getAllBrands, getAllGenders, getAllStyles } from '@/lib/data'; // Assuming these exist
+import { setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 const formSchema = z.object({
   id: z.string().optional(),
@@ -85,9 +85,6 @@ export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
     if (!firestore) return;
     setIsSubmitting(true);
 
-    // Note: This is a simplified image handling.
-    // In a real app, you'd upload images and get URLs.
-    // Here, we'll just reuse existing or placeholder images.
     const images = shoe?.images ?? [{
         id: 'placeholder-new',
         url: `https://picsum.photos/seed/${data.name.replace(/\s+/g, '-')}/600/400`,
@@ -110,23 +107,19 @@ export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
         isOnSale: data.isOnSale
     };
 
-    try {
-        if (shoe) {
-            // Update existing document
-            const docRef = doc(firestore, 'shoes', shoe.id);
-            await setDoc(docRef, shoeData, { merge: true });
-        } else {
-            // Create new document
-            const collectionRef = collection(firestore, 'shoes');
-            await addDoc(collectionRef, shoeData);
-        }
-        onFormSubmit(true);
-    } catch (error) {
-        console.error("Error saving product:", error);
-        onFormSubmit(false); // Let parent know it failed
-    } finally {
-        setIsSubmitting(false);
+    if (shoe) {
+        // Update existing document
+        const docRef = doc(firestore, 'shoes', shoe.id);
+        setDocumentNonBlocking(docRef, shoeData, { merge: true });
+    } else {
+        // Create new document
+        const collectionRef = collection(firestore, 'shoes');
+        addDocumentNonBlocking(collectionRef, shoeData);
     }
+    
+    // Optimistically close the form
+    onFormSubmit(true);
+    setIsSubmitting(false);
   };
 
   return (

@@ -34,6 +34,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts"
+import { updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 type Order = {
   id: string;
@@ -147,20 +148,11 @@ function OrdersTab({ orders, loading, error }: { orders: Order[] | null, loading
         return;
     };
     const orderRef = doc(firestore, 'users', userId, 'orders', orderId);
-    try {
-        await updateDoc(orderRef, { status: newStatus });
-        toast({
-            title: "Order Updated",
-            description: `Order status changed to ${newStatus}.`,
-        });
-    } catch(err) {
-        console.error("Failed to update order status", err);
-        toast({
-            variant: "destructive",
-            title: "Update Failed",
-            description: "Could not update the order status.",
-        });
-    }
+    updateDocumentNonBlocking(orderRef, { status: newStatus });
+    toast({
+        title: "Order Update Initiated",
+        description: `Order status changing to ${newStatus}.`,
+    });
   };
   
   if (error) {
@@ -258,7 +250,7 @@ function OrdersTab({ orders, loading, error }: { orders: Order[] | null, loading
   );
 }
 
-function ProductsTab({shoes, loading, error, onSave, onDelete}: {shoes: Shoe[] | null, loading: boolean, error: Error | null, onSave: () => void, onDelete: () => void}) {
+function ProductsTab({shoes, loading, error, onSave, onDelete}: {shoes: Shoe[] | null, loading: boolean, error: Error | null, onSave: () => void, onDelete: (shoeId: string) => void}) {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [selectedShoe, setSelectedShoe] = useState<Shoe | null>(null);
 
@@ -341,7 +333,7 @@ function ProductsTab({shoes, loading, error, onSave, onDelete}: {shoes: Shoe[] |
                                                 <DropdownMenuItem onClick={() => handleEdit(shoe)}>
                                                     <Edit className="mr-2 h-4 w-4"/>Edit
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem className="text-destructive" onClick={async () => onDelete()}>
+                                                <DropdownMenuItem className="text-destructive" onClick={() => onDelete(shoe.id)}>
                                                     <Trash2 className="mr-2 h-4 w-4"/>Delete
                                                 </DropdownMenuItem>
                                                 </DropdownMenuContent>
@@ -476,18 +468,15 @@ export default function AdminDashboardPage() {
     setRefreshKey(k => k + 1);
   }
 
-  const handleProductDelete = async (shoeId: string) => {
+  const handleProductDelete = (shoeId: string) => {
     if (!firestore) return;
     if (!confirm('Are you sure you want to delete this product? This cannot be undone.')) return;
     
     toast({ title: 'Deleting product...' });
-    try {
-        await deleteDoc(doc(firestore, 'shoes', shoeId));
-        toast({ title: 'Product deleted successfully.' });
-        setRefreshKey(k => k + 1);
-    } catch (e: any) {
-        toast({ variant: 'destructive', title: 'Error deleting product', description: e.message });
-    }
+    const docRef = doc(firestore, 'shoes', shoeId);
+    deleteDocumentNonBlocking(docRef);
+    toast({ title: 'Product deletion initiated.' });
+    setRefreshKey(k => k + 1);
   };
 
   return (
