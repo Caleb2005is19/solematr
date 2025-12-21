@@ -61,7 +61,7 @@ const shoeCategories = [
 ]
 
 function UserAuthButton() {
-    const { user, isUserLoading } = useAuth(); // Use isUserLoading state
+    const { user, isUserLoading } = useAuth();
     const auth = useAuth();
     const [isAdmin, setIsAdmin] = useState(false);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -71,13 +71,14 @@ function UserAuthButton() {
     useEffect(() => {
         // Only run this check if loading is finished and we have a user
         if (!isUserLoading && user) {
-            // Force a refresh of the token to get the latest claims
+            // Force a refresh of the token to get the latest claims.
+            // This is crucial for when the claim is added while the user is logged in.
             user.getIdTokenResult(true).then(idTokenResult => {
                 const isAdminClaim = !!idTokenResult.claims.admin;
                 setIsAdmin(isAdminClaim);
             });
         } else {
-            // If there's no user, they are not an admin
+            // If there's no user or it's loading, they are not an admin
             setIsAdmin(false);
         }
     }, [user, isUserLoading]);
