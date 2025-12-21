@@ -42,7 +42,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from '@/firebase';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, signOut } from 'firebase/auth';
 import AuthModal from '@/components/auth-modal';
 
 
@@ -62,7 +62,7 @@ const shoeCategories = [
 
 function UserAuthButton() {
     const { user } = useAuth();
-    const auth = getAuth();
+    const auth = useAuth();
     const [isAdmin, setIsAdmin] = useState(false);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [authModalType, setAuthModalType] = useState<'signIn' | 'signUp'>('signIn');
@@ -70,7 +70,8 @@ function UserAuthButton() {
 
     useEffect(() => {
         if (user) {
-            user.getIdTokenResult().then(idTokenResult => {
+            // Force a refresh of the token to get the latest claims
+            user.getIdTokenResult(true).then(idTokenResult => {
                 const isAdminClaim = !!idTokenResult.claims.admin;
                 setIsAdmin(isAdminClaim);
             });
