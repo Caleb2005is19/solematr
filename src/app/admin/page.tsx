@@ -138,7 +138,7 @@ function OrdersTab({ orders, loading, error }: { orders: Order[] | null, loading
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  const handleStatusUpdate = async (orderId: string, userId: string, newStatus: Order['status']) => {
+  const handleStatusUpdate = (orderId: string, userId: string, newStatus: Order['status']) => {
     if (!firestore || !userId) {
         toast({
             variant: "destructive",
