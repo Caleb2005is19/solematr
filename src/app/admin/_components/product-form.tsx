@@ -1,6 +1,6 @@
 'use client';
 
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
@@ -25,9 +25,10 @@ import {
 import { useFirestore } from '@/firebase';
 import type { Shoe } from '@/lib/types';
 import { useState } from 'react';
-import { Loader2, Trash2 } from 'lucide-react';
+import { Loader2, Plus, Trash2 } from 'lucide-react';
 import { setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const formSchema = z.object({
   id: z.string().optional(),
@@ -53,11 +54,13 @@ interface ProductFormProps {
   onFormSubmit: (saved: boolean) => void;
 }
 
+const COMMON_SIZES = [7, 7.5, 8, 8.5, 9, 9.5, 10, 10.5, 11, 11.5, 12, 13];
+
 export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
   const firestore = useFirestore();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [customSizeInput, setCustomSizeInput] = useState('');
   
-  // Convert sizes array from numbers to objects for useFieldArray
   const defaultValues: ProductFormValues = {
     id: shoe?.id,
     name: shoe?.name ?? '',
@@ -75,11 +78,22 @@ export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues,
   });
+  
+  const currentSizes = form.watch('sizes');
 
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: "sizes"
-  });
+  const handleCustomSizeAdd = () => {
+    const size = parseFloat(customSizeInput);
+    if (!isNaN(size) && size > 0 && !currentSizes.includes(size)) {
+        const newSizes = [...currentSizes, size].sort((a,b) => a-b);
+        form.setValue('sizes', newSizes, { shouldValidate: true });
+        setCustomSizeInput('');
+    }
+  };
+
+  const handleCustomSizeRemove = (size: number) => {
+    const newSizes = currentSizes.filter(s => s !== size);
+    form.setValue('sizes', newSizes, { shouldValidate: true });
+  }
 
   const onSubmit = async (data: ProductFormValues) => {
     if (!firestore) return;
@@ -102,7 +116,7 @@ export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
         price: data.price,
         description: data.description,
         images,
-        sizes: data.sizes,
+        sizes: data.sizes.sort((a,b) => a-b),
         gender: data.gender,
         isOnSale: data.isOnSale
     };
@@ -119,6 +133,8 @@ export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
     onFormSubmit(true);
     setIsSubmitting(false);
   };
+
+  const customSizes = currentSizes.filter(s => !COMMON_SIZES.includes(s));
 
   return (
     <Form {...form}>
@@ -169,6 +185,26 @@ export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
                     </FormItem>
                 )}
                 />
+                 <FormField
+                  control={form.control}
+                  name="isOnSale"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm mt-auto">
+                      <div className="space-y-0.5">
+                        <FormLabel>Put on Sale</FormLabel>
+                        <FormDescription>
+                          Display this product in the sale section.
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
             </div>
             {/* Right Column */}
             <div className="space-y-6">
@@ -216,7 +252,7 @@ export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
                             <FormItem>
                             <FormLabel>Price (KSH)</FormLabel>
                             <FormControl>
-                                <Input type="number" placeholder="120.00" {...field} />
+                                <Input type="number" placeholder="120.00" {...field} value={field.value ?? ""} />
                             </FormControl>
                             <FormMessage />
                             </FormItem>
@@ -245,59 +281,82 @@ export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
                             )}
                         />
                 </div>
-                <div>
-                    <FormLabel>Sizes (US Men's)</FormLabel>
-                    <div className="mt-2 grid grid-cols-3 sm:grid-cols-4 gap-2">
-                        {fields.map((field, index) => (
-                            <div key={field.id} className="flex items-center gap-1">
+                <FormField
+                    control={form.control}
+                    name="sizes"
+                    render={() => (
+                    <FormItem>
+                        <div className="mb-4">
+                            <FormLabel className="text-base">Sizes (US Men's)</FormLabel>
+                            <FormDescription>
+                                Select from common sizes or add a custom one.
+                            </FormDescription>
+                        </div>
+                        <div className="grid grid-cols-4 gap-2 rounded-md border p-4">
+                            {COMMON_SIZES.map((size) => (
                                 <FormField
-                                    control={form.control}
-                                    name={`sizes.${index}`}
-                                    render={({ field }) => (
-                                        <Input
-                                            {...field}
-                                            type="number"
-                                            className="w-full"
-                                            onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
+                                key={size}
+                                control={form.control}
+                                name="sizes"
+                                render={({ field }) => {
+                                    return (
+                                    <FormItem
+                                        key={size}
+                                        className="flex flex-row items-start space-x-3 space-y-0"
+                                    >
+                                        <FormControl>
+                                        <Checkbox
+                                            checked={field.value?.includes(size)}
+                                            onCheckedChange={(checked) => {
+                                            return checked
+                                                ? field.onChange([...field.value, size].sort((a,b) => a-b))
+                                                : field.onChange(
+                                                    field.value?.filter(
+                                                        (value) => value !== size
+                                                    )
+                                                )
+                                            }}
                                         />
-                                    )}
+                                        </FormControl>
+                                        <FormLabel className="font-normal">
+                                        {size}
+                                        </FormLabel>
+                                    </FormItem>
+                                    )
+                                }}
                                 />
-                                <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
-                                    <Trash2 className="h-4 w-4 text-destructive" />
+                            ))}
+                        </div>
+
+                         <div className="mt-4">
+                            <FormLabel>Custom Sizes</FormLabel>
+                            <div className="flex items-center gap-2 mt-2">
+                                <Input 
+                                    type="number" 
+                                    step="0.5" 
+                                    placeholder="e.g., 12.5" 
+                                    value={customSizeInput}
+                                    onChange={(e) => setCustomSizeInput(e.target.value)}
+                                    className="w-40"
+                                />
+                                <Button type="button" variant="outline" size="sm" onClick={handleCustomSizeAdd}>
+                                    <Plus className="h-4 w-4 mr-1"/> Add
                                 </Button>
                             </div>
-                        ))}
-                    </div>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="mt-2"
-                        onClick={() => append(0)} // Append a default value
-                    >
-                        Add Size
-                    </Button>
-                    <FormMessage>{form.formState.errors.sizes?.message}</FormMessage>
-                </div>
-                <FormField
-                  control={form.control}
-                  name="isOnSale"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                      <div className="space-y-0.5">
-                        <FormLabel>Put on Sale</FormLabel>
-                        <FormDescription>
-                          Display this product in the sale section.
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                                {customSizes.map(size => (
+                                    <div key={size} className="flex items-center gap-1 bg-secondary text-secondary-foreground rounded-full px-3 py-1 text-sm">
+                                        {size}
+                                        <Button type="button" variant="ghost" size="icon" className="h-5 w-5 rounded-full" onClick={() => handleCustomSizeRemove(size)}>
+                                            <Trash2 className="h-3 w-3" />
+                                        </Button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <FormMessage />
                     </FormItem>
-                  )}
+                    )}
                 />
             </div>
         </div>
