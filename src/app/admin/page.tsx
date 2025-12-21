@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useCollection, useMemoFirebase } from '@/firebase';
@@ -351,7 +350,7 @@ function ProductsTab({shoes, loading, error, onSave, onDelete}: {shoes: Shoe[] |
                     </Table>
                 </CardContent>
             </Card>
-            <DialogContent className="sm:max-w-[600px]">
+            <DialogContent className="sm:max-w-[800px]">
                 <DialogHeader>
                     <DialogTitle>{selectedShoe ? 'Edit Product' : 'Add New Product'}</DialogTitle>
                     <DialogDescription>
@@ -512,5 +511,3 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
-
-    
