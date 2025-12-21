@@ -69,16 +69,21 @@ function UserAuthButton() {
 
 
     useEffect(() => {
-        // Only run this check if loading is finished and we have a user
-        if (!isUserLoading && user) {
-            // Force a refresh of the token to get the latest claims.
-            // This is crucial for when the claim is added while the user is logged in.
-            user.getIdTokenResult(true).then(idTokenResult => {
-                const isAdminClaim = !!idTokenResult.claims.admin;
-                setIsAdmin(isAdminClaim);
-            });
+        if (isUserLoading) return;
+
+        if (user) {
+            // Force a token refresh to get the latest custom claims.
+            user.getIdTokenResult(true)
+                .then((idTokenResult) => {
+                    const isAdminClaim = !!idTokenResult.claims.admin;
+                    setIsAdmin(isAdminClaim);
+                })
+                .catch((error) => {
+                    console.error("Error fetching token claims:", error);
+                    setIsAdmin(false);
+                });
         } else {
-            // If there's no user or it's loading, they are not an admin
+            // If there's no user, they are not an admin
             setIsAdmin(false);
         }
     }, [user, isUserLoading]);
