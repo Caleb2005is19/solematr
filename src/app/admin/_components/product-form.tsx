@@ -96,11 +96,11 @@ export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
     form.setValue('sizes', newSizes, { shouldValidate: true });
   }
 
-  const onSubmit = async (data: ProductFormValues) => {
+  const onSubmit = (data: ProductFormValues) => {
     if (!firestore) return;
     setIsSubmitting(true);
 
-    const images = shoe?.images ?? [{
+    const images = (shoe?.images && shoe.images.length > 0) ? shoe.images : [{
         id: 'placeholder-new',
         url: `https://picsum.photos/seed/${data.name.replace(/\s+/g, '-')}/600/400`,
         alt: `A photo of ${data.name}`,
