@@ -1,3 +1,4 @@
+
 import Link from 'next/link';
 import Image from 'next/image';
 import type { Shoe } from '@/lib/types';
@@ -9,15 +10,27 @@ interface ShoeCardProps {
 }
 
 export default function ShoeCard({ shoe }: ShoeCardProps) {
+  const imageUrl = shoe.images && shoe.images.length > 0
+    ? shoe.images[0].url
+    : "https://placehold.co/600x400/EEE/31343C?text=No+Image";
+  
+  const imageAlt = shoe.images && shoe.images.length > 0
+    ? shoe.images[0].alt
+    : `A photo of ${shoe.name}`;
+
+  const imageHint = shoe.images && shoe.images.length > 0
+    ? shoe.images[0].hint
+    : "shoe photo";
+
   return (
     <Link href={`/product/${shoe.id}`} className="group">
       <Card className="h-full overflow-hidden transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20 hover:border-primary/50">
         <CardHeader className="p-0">
           <AspectRatio ratio={4 / 3}>
             <Image
-              src={shoe.images[0].url}
-              alt={shoe.images[0].alt}
-              data-ai-hint={shoe.images[0].hint}
+              src={imageUrl}
+              alt={imageAlt}
+              data-ai-hint={imageHint}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               className="object-cover transition-transform duration-300 ease-in-out group-hover:scale-105"
@@ -36,3 +49,5 @@ export default function ShoeCard({ shoe }: ShoeCardProps) {
     </Link>
   );
 }
+
+    

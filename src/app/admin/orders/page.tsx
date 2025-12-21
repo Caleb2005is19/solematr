@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useCollection, useMemoFirebase } from '@/firebase';
@@ -313,7 +314,7 @@ function ProductsTab({shoes, loading, error, onSave, onDelete}: {shoes: Shoe[] |
                                                 alt={shoe.name}
                                                 className="aspect-square rounded-md object-cover"
                                                 height="64"
-                                                src={shoe.images[0].url}
+                                                src={shoe.images && shoe.images.length > 0 ? shoe.images[0].url : "https://placehold.co/64x64/EEE/31343C?text=No+Img"}
                                                 width="64"
                                             />
                                         </TableCell>
@@ -511,3 +512,5 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+
+    

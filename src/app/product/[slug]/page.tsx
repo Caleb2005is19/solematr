@@ -1,3 +1,4 @@
+
 import Image from 'next/image';
 import { getShoeBySlug, getShoes } from '@/lib/data';
 import { notFound } from 'next/navigation';
@@ -36,12 +37,13 @@ export async function generateMetadata(
   }
  
   const previousImages = (await parent).openGraph?.images || []
+  const mainImageUrl = shoe.images && shoe.images.length > 0 ? shoe.images[0].url : '';
  
   return {
     title: `${shoe.name} by ${shoe.brand}`,
     description: shoe.description.substring(0, 160), // Keep it concise for meta descriptions
     openGraph: {
-      images: [shoe.images[0].url, ...previousImages],
+      images: mainImageUrl ? [mainImageUrl, ...previousImages] : previousImages,
     },
   }
 }
@@ -79,25 +81,41 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
         <div className="w-full">
           <Carousel className="w-full">
             <CarouselContent>
-              {shoe.images.map((image, index) => (
-                <CarouselItem key={index}>
+              {shoe.images && shoe.images.length > 0 ? (
+                shoe.images.map((image, index) => (
+                  <CarouselItem key={index}>
+                    <Card className="overflow-hidden rounded-xl border-none">
+                      <CardContent className="flex aspect-square md:aspect-video items-center justify-center p-0">
+                        <Image
+                          src={image.url}
+                          alt={image.alt}
+                          data-ai-hint={image.hint}
+                          width={1200}
+                          height={800}
+                          className="object-cover w-full h-full"
+                          priority={index === 0}
+                        />
+                      </CardContent>
+                    </Card>
+                  </CarouselItem>
+                ))
+              ) : (
+                 <CarouselItem>
                   <Card className="overflow-hidden rounded-xl border-none">
-                    <CardContent className="flex aspect-square md:aspect-video items-center justify-center p-0">
-                      <Image
-                        src={image.url}
-                        alt={image.alt}
-                        data-ai-hint={image.hint}
-                        width={1200}
-                        height={800}
-                        className="object-cover w-full h-full"
-                        priority={index === 0}
-                      />
+                    <CardContent className="flex aspect-square md:aspect-video items-center justify-center p-0 bg-secondary">
+                       <Image
+                          src="https://placehold.co/600x400/EEE/31343C?text=No+Image"
+                          alt={shoe.name}
+                          width={1200}
+                          height={800}
+                          className="object-cover w-full h-full"
+                        />
                     </CardContent>
                   </Card>
                 </CarouselItem>
-              ))}
+              )}
             </CarouselContent>
-            {shoe.images.length > 1 && (
+            {shoe.images && shoe.images.length > 1 && (
               <>
                 <CarouselPrevious className="ml-14" />
                 <CarouselNext className="mr-14" />
@@ -127,7 +145,7 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
           <div>
               <h3 className="text-xl font-semibold mb-4">Customer Reviews</h3>
               <div className="space-y-6">
-                  {shoe.reviews.length > 0 ? shoe.reviews.map(review => (
+                  {shoe.reviews && shoe.reviews.length > 0 ? shoe.reviews.map(review => (
                       <div key={review.id} className="p-4 border rounded-lg bg-card">
                           <div className="flex items-center justify-between mb-2">
                              <p className="font-semibold">{review.author}</p>
@@ -158,3 +176,5 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
     </>
   );
 }
+
+    

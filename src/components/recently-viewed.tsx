@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -5,7 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useBrowsingHistory } from '@/hooks/use-browsing-history-hook';
-import { getShoeBySlug } from '@/lib/data'; // Changed to getShoeBySlug
+import { getShoeBySlug } from '@/lib/client-data';
 import type { Shoe } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { History } from 'lucide-react';
@@ -57,8 +58,8 @@ export default function RecentlyViewed() {
             <Link key={shoe.id} href={`/product/${shoe.id}`} className="flex items-center gap-3 group">
               <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-md border">
                 <Image
-                  src={shoe.images[0].url}
-                  alt={shoe.images[0].alt}
+                  src={(shoe.images && shoe.images[0]?.url) || "https://placehold.co/600x400/EEE/31343C?text=No+Image"}
+                  alt={(shoe.images && shoe.images[0]?.alt) || shoe.name}
                   fill
                   sizes="56px"
                   className="object-cover transition-transform group-hover:scale-105"
@@ -75,3 +76,5 @@ export default function RecentlyViewed() {
     </Card>
   );
 }
+
+    
