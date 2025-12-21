@@ -1,31 +1,31 @@
+
 'use client';
-import { useAuth } from '@/firebase';
+import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 
 function AdminGuard({ children }: { children: React.ReactNode }) {
-  const { user, isUserLoading } = useAuth();
+  const { user, isUserLoading } = useUser();
   const router = useRouter();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (isUserLoading) {
-      return; // Wait for auth state to be fully loaded
+      return; 
     }
 
     if (!user) {
-      router.replace('/'); // Not logged in, redirect to home
+      router.replace('/'); 
       return;
     }
 
-    // Force a token refresh to get the latest custom claims.
     user.getIdTokenResult(true).then(idTokenResult => {
       const isAdminClaim = !!idTokenResult.claims.admin;
       setIsAdmin(isAdminClaim);
       if (!isAdminClaim) {
         console.log("User is not an admin, redirecting.");
-        router.replace('/'); // Not an admin, redirect to home
+        router.replace('/'); 
       }
     }).catch(error => {
         console.error("Error getting ID token result:", error);
@@ -49,7 +49,6 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
 
-  // Fallback, though redirection should have happened.
   return null;
 }
 

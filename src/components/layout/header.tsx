@@ -41,7 +41,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useAuth } from '@/firebase';
+import { useAuth, useUser } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import AuthModal from '@/components/auth-modal';
 
@@ -61,7 +61,7 @@ const shoeCategories = [
 ]
 
 function UserAuthButton() {
-    const { user, isUserLoading } = useAuth();
+    const { user, isUserLoading } = useUser();
     const auth = useAuth();
     const [isAdmin, setIsAdmin] = useState(false);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -69,24 +69,16 @@ function UserAuthButton() {
 
 
     useEffect(() => {
-        if (isUserLoading) return;
-
         if (user) {
-            // Force a token refresh to get the latest custom claims.
             user.getIdTokenResult(true)
                 .then((idTokenResult) => {
-                    const isAdminClaim = !!idTokenResult.claims.admin;
-                    setIsAdmin(isAdminClaim);
+                    setIsAdmin(!!idTokenResult.claims.admin);
                 })
-                .catch((error) => {
-                    console.error("Error fetching token claims:", error);
-                    setIsAdmin(false);
-                });
+                .catch(() => setIsAdmin(false));
         } else {
-            // If there's no user, they are not an admin
             setIsAdmin(false);
         }
-    }, [user, isUserLoading]);
+    }, [user]);
     
     const handleSignOut = async () => {
         try {
@@ -230,7 +222,7 @@ export default function Header() {
         </div>
 
         <div className="flex items-center gap-2">
-            <div className="hidden md:flex">
+            <div className="flex">
                 <UserAuthButton />
             </div>
             <CartIcon />
