@@ -66,7 +66,11 @@ function UserAuthButton() {
     const [isAdmin, setIsAdmin] = useState(false);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [authModalType, setAuthModalType] = useState<'signIn' | 'signUp'>('signIn');
+    const [isMounted, setIsMounted] = useState(false);
 
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     useEffect(() => {
         if (user) {
@@ -88,8 +92,13 @@ function UserAuthButton() {
         }
     };
     
-    if (isUserLoading) {
-      return <Loader2 className="h-6 w-6 animate-spin" />;
+    if (!isMounted || isUserLoading) {
+      return (
+          <Button disabled>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
+              Login
+          </Button>
+      );
     }
 
     if (user) {
