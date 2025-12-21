@@ -131,7 +131,7 @@ function UserAuthButton() {
                     <DropdownMenuSeparator />
                     {isAdmin && (
                          <DropdownMenuItem asChild>
-                            <Link href="/admin/orders">
+                            <Link href="/admin">
                                 <Shield className="mr-2 h-4 w-4" />
                                 Admin Panel
                             </Link>
