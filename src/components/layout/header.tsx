@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -24,7 +25,7 @@ import {
 import { cn } from '@/lib/utils';
 import React, { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
-import { Menu, User, LogIn, LogOut, Shield, UserPlus } from 'lucide-react';
+import { Menu, User, LogIn, LogOut, Shield, UserPlus, Loader2 } from 'lucide-react';
 import {
   Accordion,
   AccordionContent,
@@ -38,11 +39,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from '@/firebase';
-import { getAuth, signOut } from 'firebase/auth';
+import { signOut } from 'firebase/auth';
 import AuthModal from '@/components/auth-modal';
 
 
@@ -61,7 +61,7 @@ const shoeCategories = [
 ]
 
 function UserAuthButton() {
-    const { user } = useAuth();
+    const { user, isUserLoading } = useAuth(); // Use isUserLoading state
     const auth = useAuth();
     const [isAdmin, setIsAdmin] = useState(false);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -69,16 +69,18 @@ function UserAuthButton() {
 
 
     useEffect(() => {
-        if (user) {
+        // Only run this check if loading is finished and we have a user
+        if (!isUserLoading && user) {
             // Force a refresh of the token to get the latest claims
             user.getIdTokenResult(true).then(idTokenResult => {
                 const isAdminClaim = !!idTokenResult.claims.admin;
                 setIsAdmin(isAdminClaim);
             });
         } else {
+            // If there's no user, they are not an admin
             setIsAdmin(false);
         }
-    }, [user]);
+    }, [user, isUserLoading]);
     
     const handleSignOut = async () => {
         try {
@@ -88,6 +90,10 @@ function UserAuthButton() {
         }
     };
     
+    if (isUserLoading) {
+      return <Loader2 className="h-6 w-6 animate-spin" />;
+    }
+
     if (user) {
         return (
             <DropdownMenu>
@@ -95,7 +101,7 @@ function UserAuthButton() {
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                         <Avatar className="h-9 w-9">
                             <AvatarImage src={user.photoURL ?? ''} alt={user.displayName ?? 'User'} />
-                            <AvatarFallback>{user.displayName?.charAt(0) ?? 'U'}</AvatarFallback>
+                            <AvatarFallback>{user.displayName?.charAt(0).toUpperCase() ?? 'U'}</AvatarFallback>
                         </Avatar>
                     </Button>
                 </DropdownMenuTrigger>
