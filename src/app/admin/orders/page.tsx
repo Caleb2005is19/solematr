@@ -17,7 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { MoreHorizontal, Package, Users } from 'lucide-react';
 import { useFirestore, useFunctions } from '@/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, collectionGroup } from 'firebase/firestore'; // Import collectionGroup
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -67,14 +67,23 @@ function OrdersTab() {
 
   const ordersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return collection(firestore, 'orders');
+    // Use a collectionGroup query to fetch all 'orders' from any user's subcollection
+    return collectionGroup(firestore, 'orders');
   }, [firestore]);
 
   const { data: orders, loading, error } = useCollection<Order>(ordersQuery);
 
-  const handleStatusUpdate = async (orderId: string, newStatus: Order['status']) => {
-    if (!firestore) return;
-    const orderRef = doc(firestore, 'orders', orderId);
+  const handleStatusUpdate = async (orderId: string, userId: string, newStatus: Order['status']) => {
+    if (!firestore || !userId) {
+        toast({
+            variant: "destructive",
+            title: "Update Failed",
+            description: "User information is missing for this order.",
+        });
+        return;
+    };
+    // The path to the order is now /users/{userId}/orders/{orderId}
+    const orderRef = doc(firestore, 'users', userId, 'orders', orderId);
     try {
         await updateDoc(orderRef, { status: newStatus });
         toast({
@@ -161,9 +170,9 @@ function OrdersTab() {
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
                           <DropdownMenuItem>View Details</DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => handleStatusUpdate(order.id, 'fulfilled')}>Mark as Fulfilled</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleStatusUpdate(order.id, 'shipped')}>Mark as Shipped</DropdownMenuItem>
-                           <DropdownMenuItem onClick={() => handleStatusUpdate(order.id, 'cancelled')} className="text-destructive">Cancel Order</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleStatusUpdate(order.id, order.userId, 'fulfilled')}>Mark as Fulfilled</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleStatusUpdate(order.id, order.userId, 'shipped')}>Mark as Shipped</DropdownMenuItem>
+                           <DropdownMenuItem onClick={() => handleStatusUpdate(order.id, order.userId, 'cancelled')} className="text-destructive">Cancel Order</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                   </TableCell>

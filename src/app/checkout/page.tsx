@@ -140,8 +140,10 @@ export default function CheckoutPage() {
             status: 'unfulfilled',
             createdAt: serverTimestamp(),
         };
-
-        const docRef = await addDoc(collection(firestore, 'orders'), orderData);
+        
+        // Save the order to the user-specific subcollection
+        const ordersCollectionRef = collection(firestore, 'users', user.uid, 'orders');
+        const docRef = await addDoc(ordersCollectionRef, orderData);
         console.log("Order created with ID: ", docRef.id);
         
         toast({

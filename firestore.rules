@@ -20,6 +20,8 @@ service cloud.firestore {
      *   to be populated via the Admin SDK.
      * - Strict User Ownership: All data under `/users/{userId}` is accessible only
      *   to the authenticated user whose UID matches `{userId}`.
+     * - Admin Access: Users with an `admin: true` custom claim can read from any
+     *   'orders' collection group, allowing them to view all orders in the system.
      * - No User Enumeration: Listing documents in the top-level `/users`
      *   collection is disabled to protect user privacy.
      * - Relational Integrity: On creation, documents in user subcollections must
@@ -47,6 +49,13 @@ service cloud.firestore {
      */
     function isSignedIn() {
       return request.auth != null;
+    }
+
+    /**
+     * Returns true if the requesting user has the 'admin' custom claim.
+     */
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.admin == true;
     }
 
     /**
@@ -118,13 +127,13 @@ service cloud.firestore {
      * @description A user's own profile document.
      * @path /users/{userId}
      * @allow (create) A new user can create their own profile if their UID matches the document ID.
-     * @deny (list) Listing all users is forbidden to protect user privacy.
+     * @deny (list) Listing all users is forbidden to protect user privacy (unless admin).
      * @deny (update) A user cannot update another user's profile.
      * @principle Enforces self-creation and ownership of a user's root document.
      */
     match /users/{userId} {
       allow get: if isOwner(userId);
-      allow list: if false;
+      allow list: if isAdmin();
       allow create: if isOwner(userId) && isUserDocumentDataConsistentOnCreate(userId);
       allow update: if isExistingOwner(userId) && isUserDocumentIdImmutable();
       allow delete: if isExistingOwner(userId);
@@ -146,15 +155,17 @@ service cloud.firestore {
       /**
        * @description A user's historical orders.
        * @path /users/{userId}/orders/{orderId}
-       * @allow (list) A signed-in user can list their own past orders.
+       * @allow (list) A signed-in user can list their own past orders. Admins can read/update any order.
        * @deny (delete) A user cannot delete another user's order history.
-       * @principle Restricts access to a user's own data tree.
+       * @principle Restricts access to a user's own data tree, with an exception for admins.
        */
       match /orders/{orderId} {
+        // Collection Group Rule for Admins is defined below
         allow get, list: if isOwner(userId);
         allow create: if isOwner(userId) && isOwnerDataConsistentOnCreate(userId);
-        allow update: if isExistingOwner(userId) && isOwnerFieldImmutable();
-        allow delete: if isExistingOwner(userId);
+        // Admins can update status, but owners shouldn't change historical orders.
+        allow update: if isAdmin(); 
+        allow delete: if false; // Orders should not be deleted by clients.
 
         /**
          * @description The specific items within one of a user's historical orders.
@@ -189,6 +200,21 @@ service cloud.firestore {
         allow update: if false;
         allow delete: if false;
       }
+    }
+    
+    // --------------------------------------------------------------------------
+    // Collection Group Rules
+    // --------------------------------------------------------------------------
+
+    /**
+     * @description Collection group rule for all `orders` collections.
+     * @path /{path=**}/orders/{orderId}
+     * @allow (list) An admin user can list all orders across all users.
+     * @principle Provides admins with necessary cross-user data access.
+     */
+    match /{path=**}/orders/{orderId} {
+      allow list, get: if isAdmin();
+      // Update rule needs to be on the specific path match, not the group.
     }
   }
 }
