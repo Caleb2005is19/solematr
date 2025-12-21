@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useCollection } from '@/firebase';
+import { useCollection, useMemoFirebase } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -61,9 +62,15 @@ type AppUser = {
 };
 
 function OrdersTab() {
-  const { data: orders, loading, error } = useCollection<Order>('orders');
   const firestore = useFirestore();
   const { toast } = useToast();
+
+  const ordersQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'orders');
+  }, [firestore]);
+
+  const { data: orders, loading, error } = useCollection<Order>(ordersQuery);
 
   const handleStatusUpdate = async (orderId: string, newStatus: Order['status']) => {
     if (!firestore) return;
