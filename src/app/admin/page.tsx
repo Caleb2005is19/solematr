@@ -148,7 +148,7 @@ function OrdersTab({ orders, loading, error }: { orders: Order[] | null, loading
         return;
     };
     const orderRef = doc(firestore, 'users', userId, 'orders', orderId);
-    updateDocumentNonBlocking(firestore, orderRef, { status: newStatus });
+    updateDocumentNonBlocking(orderRef, { status: newStatus });
     toast({
         title: "Order Update Initiated",
         description: `Order status changing to ${newStatus}.`,
@@ -474,7 +474,7 @@ export default function AdminDashboardPage() {
     
     toast({ title: 'Deleting product...' });
     const docRef = doc(firestore, 'shoes', shoeId);
-    deleteDocumentNonBlocking(firestore, docRef);
+    deleteDocumentNonBlocking(docRef);
     toast({ title: 'Product deletion initiated.' });
     setRefreshKey(k => k + 1);
   };

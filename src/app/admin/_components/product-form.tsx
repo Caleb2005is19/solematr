@@ -26,9 +26,10 @@ import { useFirestore } from '@/firebase';
 import type { Shoe } from '@/lib/types';
 import { useState } from 'react';
 import { Loader2, Plus, Trash2 } from 'lucide-react';
-import { setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
+import { doc } from 'firebase/firestore';
 
 const formSchema = z.object({
   id: z.string().optional(),
@@ -123,10 +124,11 @@ export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
 
     if (shoe?.id) {
         // Update existing document
-        setDocumentNonBlocking(firestore, shoe.id, shoeData);
+        const docRef = doc(firestore, 'shoes', shoe.id);
+        updateDocumentNonBlocking(docRef, shoeData);
     } else {
         // Create new document
-        addDocumentNonBlocking(firestore, shoeData);
+        addDocumentNonBlocking(firestore, 'shoes', shoeData);
     }
     
     // Optimistically close the form

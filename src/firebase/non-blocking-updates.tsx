@@ -18,8 +18,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
  * Initiates a setDoc operation for a document reference.
  * Does NOT await the write operation internally.
  */
-export function setDocumentNonBlocking(firestore: Firestore, shoeId: string, data: any) {
-  const docRef = doc(firestore, 'shoes', shoeId);
+export function setDocumentNonBlocking(docRef: DocumentReference, data: any) {
   setDoc(docRef, data, { merge: true }).catch(error => {
     errorEmitter.emit(
       'permission-error',
@@ -39,8 +38,8 @@ export function setDocumentNonBlocking(firestore: Firestore, shoeId: string, dat
  * Does NOT await the write operation internally.
  * Returns the Promise for the new doc ref, but typically not awaited by caller.
  */
-export function addDocumentNonBlocking(firestore: Firestore, data: any) {
-  const colRef = collection(firestore, 'shoes');
+export function addDocumentNonBlocking(firestore: Firestore, collectionName: string, data: any) {
+  const colRef = collection(firestore, collectionName);
   const promise = addDoc(colRef, data)
     .catch(error => {
       errorEmitter.emit(
@@ -60,7 +59,7 @@ export function addDocumentNonBlocking(firestore: Firestore, data: any) {
  * Initiates an updateDoc operation for a document reference.
  * Does NOT await the write operation internally.
  */
-export function updateDocumentNonBlocking(firestore: Firestore, docRef: DocumentReference, data: any) {
+export function updateDocumentNonBlocking(docRef: DocumentReference, data: any) {
   updateDoc(docRef, data)
     .catch(error => {
       errorEmitter.emit(
@@ -79,7 +78,7 @@ export function updateDocumentNonBlocking(firestore: Firestore, docRef: Document
  * Initiates a deleteDoc operation for a document reference.
  * Does NOT await the write operation internally.
  */
-export function deleteDocumentNonBlocking(firestore: Firestore, docRef: DocumentReference) {
+export function deleteDocumentNonBlocking(docRef: DocumentReference) {
   deleteDoc(docRef)
     .catch(error => {
       errorEmitter.emit(
