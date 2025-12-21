@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -46,7 +46,10 @@ const signUpSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters.'),
 });
 
-const formSchema = z.union([signInSchema, signUpSchema]);
+// A combined schema that includes all possible fields for type inference.
+const combinedSchema = signUpSchema.extend({
+    displayName: z.string().optional(),
+});
 
 
 export default function AuthModal({ isOpen, onOpenChange, type, onSwitch }: AuthModalProps) {
@@ -56,14 +59,22 @@ export default function AuthModal({ isOpen, onOpenChange, type, onSwitch }: Auth
 
   const currentSchema = type === 'signIn' ? signInSchema : signUpSchema;
 
-  const form = useForm<z.infer<typeof currentSchema>>({
+  const form = useForm<z.infer<typeof combinedSchema>>({
     resolver: zodResolver(currentSchema),
     defaultValues: {
+      displayName: '',
       email: '',
       password: '',
-      ...(type === 'signUp' && { displayName: '' }),
     },
   });
+
+  useEffect(() => {
+    form.reset({
+        displayName: '',
+        email: '',
+        password: '',
+    });
+  }, [type, form]);
   
   const onSubmit = async (values: z.infer<typeof currentSchema>) => {
     setIsSubmitting(true);
