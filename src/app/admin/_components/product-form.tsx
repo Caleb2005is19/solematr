@@ -258,7 +258,7 @@ export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
                                     {...field}
                                     type="number"
                                     className="w-20"
-                                    onChange={e => field.onChange(parseFloat(e.target.value))}
+                                    onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
                                 />
                             )}
                         />
