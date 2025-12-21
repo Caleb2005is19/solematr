@@ -92,24 +92,15 @@ function UserAuthButton() {
         }
     };
     
-    if (!isMounted) {
-      return (
-        <Button onClick={() => { setAuthModalType('signIn'); setIsAuthModalOpen(true); }}>
-            <LogIn className="mr-2 h-4 w-4"/>
-            Login
-        </Button>
-      );
+    if (!isMounted || isUserLoading) {
+        return (
+            <Button disabled>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
+                Login
+            </Button>
+        );
     }
     
-    if (isUserLoading) {
-      return (
-          <Button disabled>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
-              Login
-          </Button>
-      );
-    }
-
     if (user) {
         return (
             <DropdownMenu>
