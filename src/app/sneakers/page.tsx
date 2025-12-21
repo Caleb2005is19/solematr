@@ -1,8 +1,10 @@
+
 import { getShoes, getAllBrands, getAllSizes, getAllStyles, getAllGenders, getCategoryDetails } from '@/lib/data';
 import ShoeFilters from '@/components/shoe-filters';
 import ProductGrid from '@/components/product-grid';
 import Breadcrumbs from '@/components/breadcrumbs';
 import type { Metadata } from 'next';
+import RecentlyViewed from '@/components/recently-viewed';
 
 export const metadata: Metadata = {
   title: 'Sneakers',
@@ -42,7 +44,7 @@ export default async function SneakersPage({
             <aside className="lg:col-span-1">
                 <div className="sticky top-24 space-y-6">
                     <ShoeFilters brands={brands} styles={styles} sizes={sizes} genders={genders} />
-                    {/* <RecentlyViewed /> can be added here if desired */}
+                    <RecentlyViewed />
                 </div>
             </aside>
             <section className="lg:col-span-3">

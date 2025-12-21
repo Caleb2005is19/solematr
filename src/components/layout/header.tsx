@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -25,7 +26,7 @@ import {
 import { cn } from '@/lib/utils';
 import React, { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
-import { Menu, User, LogIn, LogOut, Shield, UserPlus, Loader2 } from 'lucide-react';
+import { Menu, User, LogIn, LogOut, Shield, UserPlus, LoaderCircle } from 'lucide-react';
 import {
   Accordion,
   AccordionContent,
@@ -95,7 +96,7 @@ function UserAuthButton() {
     if (!isMounted || isUserLoading) {
         return (
             <Button disabled>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
+                <LoaderCircle className="mr-2 h-4 w-4 animate-spin"/>
                 Login
             </Button>
         );
@@ -194,7 +195,7 @@ export default function Header() {
                   <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] ">
                     {shoeCategories.map((component) => (
                       <ListItem
-                        key={component.title}
+                        key-={component.title}
                         title={component.title}
                         href={component.href}
                       >

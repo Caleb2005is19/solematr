@@ -1,10 +1,10 @@
+
 import { getShoes } from '@/lib/data';
 import ShoeCard from '@/components/shoe-card';
 import { ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import RecentlyViewed from '@/components/recently-viewed';
 import { Card } from '@/components/ui/card';
 
 export default async function HomePage() {
@@ -83,10 +83,6 @@ export default async function HomePage() {
             </Button>
         </div>
       </section>
-
-      <div className="lg:hidden">
-        <RecentlyViewed />
-      </div>
     </div>
   );
 }
