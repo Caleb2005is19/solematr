@@ -74,7 +74,7 @@ function UserAuthButton() {
 
     useEffect(() => {
         if (user) {
-            user.getIdTokenResult(true)
+            user.getIdTokenResult(true) // Force refresh
                 .then((idTokenResult) => {
                     setIsAdmin(!!idTokenResult.claims.admin);
                 })
@@ -92,7 +92,16 @@ function UserAuthButton() {
         }
     };
     
-    if (!isMounted || isUserLoading) {
+    if (!isMounted) {
+      return (
+        <Button onClick={() => { setAuthModalType('signIn'); setIsAuthModalOpen(true); }}>
+            <LogIn className="mr-2 h-4 w-4"/>
+            Login
+        </Button>
+      );
+    }
+    
+    if (isUserLoading) {
       return (
           <Button disabled>
               <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
@@ -144,24 +153,10 @@ function UserAuthButton() {
 
     return (
         <>
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button>
-                        <LogIn className="mr-2 h-4 w-4"/>
-                        Login
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end" forceMount>
-                     <DropdownMenuItem onClick={() => { setAuthModalType('signIn'); setIsAuthModalOpen(true); }}>
-                        <LogIn className="mr-2 h-4 w-4" />
-                        <span>Sign In</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => { setAuthModalType('signUp'); setIsAuthModalOpen(true); }}>
-                        <UserPlus className="mr-2 h-4 w-4" />
-                        <span>Sign Up</span>
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
+            <Button onClick={() => { setAuthModalType('signIn'); setIsAuthModalOpen(true); }}>
+                <LogIn className="mr-2 h-4 w-4"/>
+                Login
+            </Button>
             <AuthModal
                 isOpen={isAuthModalOpen}
                 onOpenChange={setIsAuthModalOpen}
