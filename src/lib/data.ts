@@ -57,7 +57,7 @@ export async function getShoes(filters?: { type?: string; category?: string; bra
 
     return shoes;
   } catch (error) {
-    console.error("Error fetching shoes from Firestore:", error);
+    console.error("Error fetching shoes from Firestore:", (error as Error).message);
     // In a production app, you might want to handle this more gracefully.
     // For now, we return an empty array to prevent the page from crashing.
     return [];
