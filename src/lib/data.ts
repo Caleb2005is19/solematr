@@ -8,6 +8,10 @@ import { notFound } from 'next/navigation';
  * This function is for SERVER-SIDE use only.
  */
 export async function getShoes(filters?: { type?: string; category?: string; brand?: string; style?: string; size?: string; gender?: string; onSale?: boolean }): Promise<Shoe[]> {
+  if (!adminDb) {
+    console.log("Admin SDK not initialized. Returning empty array for getShoes.");
+    return [];
+  }
   try {
     let query: FirebaseFirestore.Query<FirebaseFirestore.DocumentData> = adminDb.collection('shoes');
 
@@ -65,6 +69,10 @@ export async function getShoes(filters?: { type?: string; category?: string; bra
  * This function is for SERVER-SIDE use only.
  */
 export async function getShoeBySlug(slug: string): Promise<Shoe | undefined> {
+   if (!adminDb) {
+    console.log("Admin SDK not initialized. Returning undefined for getShoeBySlug.");
+    return undefined;
+  }
   try {
     const docRef = adminDb.collection('shoes').doc(slug);
     const docSnap = await docRef.get();
@@ -100,6 +108,10 @@ export async function getShoeById(id: string): Promise<Shoe | null> {
 
 
 async function getDistinctFieldValues(field: string): Promise<string[]> {
+    if (!adminDb) {
+        console.log(`Admin SDK not initialized. Returning empty array for getDistinctFieldValues(${field}).`);
+        return [];
+    }
     try {
         const snapshot = await adminDb.collection('shoes').select(field).get();
         if (snapshot.empty) return [];
@@ -131,6 +143,10 @@ export async function getAllGenders(): Promise<string[]> {
 }
 
 export async function getAllSizes(): Promise<number[]> {
+    if (!adminDb) {
+        console.log("Admin SDK not initialized. Returning empty array for getAllSizes.");
+        return [];
+    }
     try {
         const snapshot = await adminDb.collection('shoes').select('sizes').get();
         if (snapshot.empty) return [];

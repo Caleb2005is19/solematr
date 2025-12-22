@@ -2,41 +2,66 @@
 import admin from 'firebase-admin';
 import type { ServiceAccount } from 'firebase-admin';
 
-function initializeAdminApp() {
+// This function is memoized, so it only runs once.
+let adminApp: admin.App | undefined;
+
+function initializeAdminApp(): admin.App | undefined {
+  if (adminApp) {
+    return adminApp;
+  }
+  
+  // Return if already initialized
   if (admin.apps.length > 0) {
-    return admin.app();
+    adminApp = admin.app();
+    return adminApp;
   }
 
   try {
     const serviceAccountBase64 = process.env.FIREBASE_ADMIN_SERVICE_ACCOUNT_BASE64;
     if (!serviceAccountBase64) {
-      throw new Error('FIREBASE_ADMIN_SERVICE_ACCOUNT_BASE64 env variable is not set.');
+      // This is not a fatal error for local development or client-side rendering.
+      // Server-side functions will gracefully fail.
+      console.warn(
+        'WARNING: FIREBASE_ADMIN_SERVICE_ACCOUNT_BASE64 is not set. ' +
+        'Server-side data fetching will be disabled. ' +
+        'See README.md for setup instructions.'
+      );
+      return undefined;
     }
     const serviceAccountJson = Buffer.from(serviceAccountBase64, 'base64').toString('utf-8');
     const serviceAccount = JSON.parse(serviceAccountJson) as ServiceAccount;
 
-    return admin.initializeApp({
+    adminApp = admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
     });
+    return adminApp;
+
   } catch (e: unknown) {
     let errorMessage = 'Failed to initialize Firebase Admin SDK.';
     if (e instanceof Error) {
       errorMessage = `${errorMessage} Reason: ${e.message}`;
     }
     console.error(errorMessage);
-    // Throw the error to halt server startup if the Admin SDK is critical.
-    throw new Error(errorMessage);
+    // Don't throw here, as it can crash the server during build/dev
+    return undefined;
   }
 }
 
-// Initialize the app right away
-const adminApp = initializeAdminApp();
+// Initialize on module load
+initializeAdminApp();
 
 // Export functions that return the initialized services
-export const getAdminDb = () => admin.firestore(adminApp);
-export const getAdminAuth = () => admin.auth(adminApp);
+export const getAdminDb = (): FirebaseFirestore.Firestore | null => {
+  const app = initializeAdminApp();
+  return app ? admin.firestore(app) : null;
+};
 
-// For convenience, you can also export the initialized instances directly
-// if the import order is carefully managed, but functions are safer.
+export const getAdminAuth = (): admin.auth.Auth | null => {
+  const app = initializeAdminApp();
+  return app ? admin.auth(app) : null;
+};
+
+// For convenience, export the instances directly.
+// They will be null if the app isn't initialized.
 export const adminDb = getAdminDb();
 export const adminAuth = getAdminAuth();
