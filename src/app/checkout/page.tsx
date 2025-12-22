@@ -19,11 +19,9 @@ import {
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { CreditCard, Lock, Smartphone } from 'lucide-react';
+import { Lock, Smartphone } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { initiateStkPush } from '@/lib/mpesa';
-import { cn } from '@/lib/utils';
+import { initiateInstasendPayment } from '@/lib/instasend';
 import { useAuth, useFirestore } from '@/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
@@ -34,31 +32,7 @@ const formSchema = z.object({
   city: z.string().min(2, 'Please enter a valid city.'),
   postalCode: z.string().min(4, 'Please enter a valid postal code.'),
   country: z.string().min(2, 'Please enter a valid country.'),
-  paymentMethod: z.enum(['card', 'mpesa'], { required_error: 'Please select a payment method.' }),
-  mpesaPhone: z.string().optional(),
-  cardName: z.string().optional(),
-  cardNumber: z.string().optional(),
-  expiryDate: z.string().optional(),
-  cvc: z.string().optional(),
-}).refine(data => {
-    if (data.paymentMethod === 'card') {
-        return !!data.cardName && data.cardName.length >= 2 &&
-               !!data.cardNumber && /^\d{16}$/.test(data.cardNumber) &&
-               !!data.expiryDate && /^(0[1-9]|1[0-2])\/\d{2}$/.test(data.expiryDate) &&
-               !!data.cvc && /^\d{3,4}$/.test(data.cvc);
-    }
-    return true;
-}, {
-    message: "Please fill all credit card details correctly.",
-    path: ['cardName'], // you can pick any of the card fields
-}).refine(data => {
-    if (data.paymentMethod === 'mpesa') {
-        return !!data.mpesaPhone && /^254\d{9}$/.test(data.mpesaPhone);
-    }
-    return true;
-}, {
-    message: "M-Pesa number must be in the format 254xxxxxxxxx.",
-    path: ['mpesaPhone'],
+  instasendPhone: z.string().regex(/^254\d{9}$/, 'Phone number must be in the format 254xxxxxxxxx.'),
 });
 
 export default function CheckoutPage() {
@@ -78,8 +52,7 @@ export default function CheckoutPage() {
       city: 'Nairobi', 
       postalCode: '00100', 
       country: 'Kenya',
-      paymentMethod: 'card', mpesaPhone: '',
-      cardName: '', cardNumber: '', expiryDate: '', cvc: '',
+      instasendPhone: '',
     },
   });
   
@@ -92,8 +65,6 @@ export default function CheckoutPage() {
         });
     }
   }, [user, form]);
-
-  const paymentMethod = form.watch('paymentMethod');
 
   useEffect(() => {
     if (!isProcessing && items.length === 0) {
@@ -113,7 +84,7 @@ export default function CheckoutPage() {
             title: "Error",
             description: "You must be signed in to place an order.",
         });
-        return;
+        return false;
     }
 
     try {
@@ -136,15 +107,13 @@ export default function CheckoutPage() {
                 imageUrl: item.image.url,
             })),
             totalPrice,
-            paymentMethod: values.paymentMethod,
+            paymentMethod: 'instasend',
             status: 'unfulfilled',
             createdAt: serverTimestamp(),
         };
         
-        // Save the order to the user-specific subcollection
         const ordersCollectionRef = collection(firestore, 'users', user.uid, 'orders');
-        const docRef = await addDoc(ordersCollectionRef, orderData);
-        console.log("Order created with ID: ", docRef.id);
+        await addDoc(ordersCollectionRef, orderData);
         
         toast({
             title: "Order Placed Successfully!",
@@ -152,6 +121,7 @@ export default function CheckoutPage() {
         });
         clearCart();
         router.push('/');
+        return true;
 
     } catch (error) {
         console.error("Error creating order:", error);
@@ -160,32 +130,36 @@ export default function CheckoutPage() {
             title: "Order Failed",
             description: "Could not save your order. Please try again.",
         });
+        return false;
     }
   }
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsProcessing(true);
 
-    if (values.paymentMethod === 'mpesa') {
+    toast({
+        title: "Processing Payment...",
+        description: `Sending payment prompt to ${values.instasendPhone}. Please check your phone.`,
+    });
+
+    try {
+        // Step 1: Initiate payment with Instasend
+        await initiateInstasendPayment(values.instasendPhone, totalPrice);
         toast({
-            title: "Processing M-Pesa Payment",
-            description: `Sending STK push to ${values.mpesaPhone}. Please check your phone to complete the transaction.`,
+            title: "Payment Successful!",
+            description: "Your payment has been received.",
         });
-        try {
-            await initiateStkPush(values.mpesaPhone!, totalPrice);
-            await createOrderInFirestore(values);
-        } catch (error) {
-             toast({
-                variant: "destructive",
-                title: "M-Pesa Payment Failed",
-                description: (error as Error).message || "Could not process the M-Pesa payment. Please try again.",
-            });
-        } finally {
-            setIsProcessing(false);
-        }
-    } else { // Credit Card Payment
-        console.log("Processing credit card payment", values);
+
+        // Step 2: Create the order in Firestore
         await createOrderInFirestore(values);
+        
+    } catch (error) {
+         toast({
+            variant: "destructive",
+            title: "Payment Failed",
+            description: (error as Error).message || "Could not process your payment. Please try again.",
+        });
+    } finally {
         setIsProcessing(false);
     }
   };
@@ -238,87 +212,23 @@ export default function CheckoutPage() {
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle>Payment Method</CardTitle>
-              </CardHeader>
-              <CardContent>
-                 <FormField
-                    control={form.control}
-                    name="paymentMethod"
-                    render={({ field }) => (
-                        <FormItem className="space-y-3">
-                        <FormControl>
-                            <RadioGroup
-                                onValueChange={field.onChange}
-                                defaultValue={field.value}
-                                className="flex flex-col space-y-1"
-                                disabled={isProcessing}
-                            >
-                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                    <FormControl>
-                                        <RadioGroupItem value="card" />
-                                    </FormControl>
-                                    <FormLabel className="font-normal flex items-center gap-2">
-                                        <CreditCard className="h-5 w-5"/> Credit/Debit Card
-                                    </FormLabel>
-                                </FormItem>
-                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                    <FormControl>
-                                        <RadioGroupItem value="mpesa" />
-                                    </FormControl>
-                                    <FormLabel className="font-normal flex items-center gap-2">
-                                        <Image src="/mpesa-logo.svg" alt="M-Pesa Logo" width={60} height={20} />
-                                    </FormLabel>
-                                </FormItem>
-                            </RadioGroup>
-                        </FormControl>
-                        <FormMessage />
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Smartphone className="h-5 w-5"/> Payment Details</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="flex items-center gap-4 p-4 rounded-md border bg-secondary/50">
+                        <Image src="/instasend-logo.svg" alt="Instasend Logo" width={100} height={40} />
+                        <p className="text-sm text-muted-foreground">You will receive a payment prompt on your phone to complete the transaction.</p>
+                    </div>
+                    <FormField control={form.control} name="instasendPhone" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Safaricom Phone Number</FormLabel>
+                            <FormControl><Input placeholder="254712345678" {...field} disabled={isProcessing} /></FormControl>
+                            <FormMessage />
                         </FormItem>
-                    )}
-                    />
-              </CardContent>
+                    )}/>
+                </CardContent>
             </Card>
-
-            <div className={cn(paymentMethod === 'card' ? 'block' : 'hidden')}>
-                 <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><CreditCard className="h-5 w-5"/> Card Details</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                    <FormField control={form.control} name="cardName" render={({ field }) => (
-                            <FormItem><FormLabel>Name on Card</FormLabel><FormControl><Input placeholder="John M. Doe" {...field} disabled={isProcessing} /></FormControl><FormMessage /></FormItem>
-                        )}/>
-                        <FormField control={form.control} name="cardNumber" render={({ field }) => (
-                            <FormItem><FormLabel>Card Number</FormLabel><FormControl><Input placeholder="•••• •••• •••• ••••" autoComplete="cc-number" {...field} disabled={isProcessing} /></FormControl><FormMessage /></FormItem>
-                        )}/>
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField control={form.control} name="expiryDate" render={({ field }) => (
-                                <FormItem><FormLabel>Expiry (MM/YY)</FormLabel><FormControl><Input placeholder="MM/YY" autoComplete="cc-exp" {...field} disabled={isProcessing} /></FormControl><FormMessage /></FormItem>
-                            )}/>
-                            <FormField control={form.control} name="cvc" render={({ field }) => (
-                                <FormItem><FormLabel>CVC / CVV</FormLabel><FormControl><Input placeholder="123" autoComplete="cc-csc" {...field} disabled={isProcessing} /></FormControl><FormMessage /></FormItem>
-                            )}/>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-
-            <div className={cn(paymentMethod === 'mpesa' ? 'block' : 'hidden')}>
-                 <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Smartphone className="h-5 w-5"/> M-Pesa Details</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <FormField control={form.control} name="mpesaPhone" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>M-Pesa Phone Number</FormLabel>
-                                <FormControl><Input placeholder="254712345678" {...field} disabled={isProcessing} /></FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}/>
-                    </CardContent>
-                </Card>
-            </div>
             
             <Button type="submit" size="lg" className="w-full text-lg" disabled={isProcessing || !user}>
                 <Lock className="mr-2 h-5 w-5" />
@@ -359,7 +269,7 @@ export default function CheckoutPage() {
                     </div>
                      <div className="flex justify-between text-muted-foreground">
                         <span>Taxes</span>
-                        <span>Calculated at next step</span>
+                        <span>Included in Price</span>
                     </div>
                     <Separator />
                     <div className="flex justify-between font-bold text-xl pt-2">
