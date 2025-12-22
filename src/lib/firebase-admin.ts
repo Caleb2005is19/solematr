@@ -17,19 +17,23 @@ function initializeAdminApp(): admin.App | undefined {
   }
 
   try {
-    const serviceAccountBase64 = process.env.FIREBASE_ADMIN_SERVICE_ACCOUNT_BASE64;
-    if (!serviceAccountBase64) {
-      // This is not a fatal error for local development or client-side rendering.
-      // Server-side functions will gracefully fail.
+    // Simplified credential setup using individual environment variables
+    const serviceAccount: ServiceAccount = {
+      projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
+      // Replace newline characters from the environment variable
+      privateKey: (process.env.FIREBASE_ADMIN_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
+    };
+    
+    // Check if the required environment variables are set
+    if (!serviceAccount.projectId || !serviceAccount.clientEmail || !serviceAccount.privateKey) {
       console.warn(
-        'WARNING: FIREBASE_ADMIN_SERVICE_ACCOUNT_BASE64 is not set. ' +
+        'WARNING: Firebase Admin credentials are not fully set in .env.local. ' +
         'Server-side data fetching will be disabled. ' +
         'See README.md for setup instructions.'
       );
       return undefined;
     }
-    const serviceAccountJson = Buffer.from(serviceAccountBase64, 'base64').toString('utf-8');
-    const serviceAccount = JSON.parse(serviceAccountJson) as ServiceAccount;
 
     adminApp = admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),

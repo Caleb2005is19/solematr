@@ -16,7 +16,40 @@ This project uses environment variables to handle sensitive credentials securely
     ```
 
 2.  **Fill in your Firebase credentials:**
-    Open `.env.local` and replace the placeholder values with your actual Firebase project credentials. You can find detailed instructions inside the file on where to get each value.
+    Open `.env.local` and fill in the placeholder values. The file is split into two sections: **Client-Side Credentials** (which are safe to expose in the browser) and **Server-Side Admin Credentials** (which must be kept secret).
+
+---
+
+### How to Find Your Firebase Credentials
+
+#### **Client-Side Credentials (`NEXT_PUBLIC_...`)**
+
+These are for the Firebase SDK that runs in the user's browser.
+
+1.  Go to the **Firebase Console**: [https://console.firebase.google.com/](https://console.firebase.google.com/)
+2.  Select your project.
+3.  Click the **Gear icon** next to "Project Overview" and go to **Project settings**.
+4.  In the "General" tab, scroll down to the "Your apps" section.
+5.  Click on your web app (or create one if you haven't).
+6.  Select **"Config"** to view the `firebaseConfig` object.
+7.  Copy the values for `apiKey`, `authDomain`, `projectId`, and `appId` into the matching `NEXT_PUBLIC_...` fields in your `.env.local` file.
+
+
+
+#### **Server-Side Admin Credentials (`FIREBASE_ADMIN_...`)**
+
+These are for the Firebase Admin SDK that runs on the server (for fetching product data securely).
+
+1.  In your Firebase **Project settings**, go to the **"Service accounts"** tab.
+2.  Click the **"Generate new private key"** button. A JSON file will be downloaded to your computer.
+3.  Open the downloaded JSON file. It will contain your `project_id`, `client_email`, and `private_key`.
+4.  Copy these three values into the corresponding `FIREBASE_ADMIN_...` fields in your `.env.local` file.
+
+    **Important:** When you copy the `private_key`, make sure to copy the entire string, including the `-----BEGIN PRIVATE KEY-----` and `-----END PRIVATE KEY-----` parts.
+
+
+
+---
 
 ### 2. Install Dependencies and Run
 
