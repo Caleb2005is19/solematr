@@ -12,7 +12,7 @@ This project uses environment variables to handle sensitive credentials securely
     Rename the `.env.example` file to `.env.local`. This file is ignored by Git, so your secrets will not be committed.
 
     ```bash
-    cp .env.example .env.local
+    cp .env.example .env.local 
     ```
 
 2.  **Fill in your Firebase credentials:**
