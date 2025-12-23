@@ -20,7 +20,7 @@ This file is ignored by Git, so your secrets will not be committed.
 
 You need two sets of credentials: one for the client-side (public) and one for the server-side (secret).
 
-#### **A. Client-Side Credentials (Public)**
+#### A. Client-Side Credentials (Public)
 
 These are for the Firebase SDK that runs in the user's browser.
 
@@ -32,17 +32,26 @@ These are for the Firebase SDK that runs in the user's browser.
 6.  Select **"Config"** to view the `firebaseConfig` object.
 7.  Copy the values into the corresponding `NEXT_PUBLIC_...` fields in your `.env.local` file.
 
-#### **B. Server-Side Admin Credentials (Secret)**
+#### B. Server-Side Admin Credentials (Secret)
 
-These are for the Firebase Admin SDK, which runs on the server to perform privileged operations like reading all product data for the main page.
+These are for the Firebase Admin SDK, which runs on the server to perform privileged operations. This requires a **single, base64-encoded** environment variable.
 
 1.  In your Firebase **Project settings**, go to the **"Service accounts"** tab.
 2.  Click the **"Generate new private key"** button. A warning will appear; confirm by clicking **"Generate key"**.
-3.  A **JSON file** will be downloaded to your computer. Open this file in a text editor.
-4.  **Copy the three required values** from the JSON file into your `.env.local` file:
-    *   `FIREBASE_ADMIN_PROJECT_ID`: Copy the `project_id` value.
-    *   `FIREBASE_ADMIN_CLIENT_EMAIL`: Copy the `client_email` value.
-    *   `FIREBASE_ADMIN_PRIVATE_KEY`: Copy the entire `private_key` value. **Important:** It is a very long string that starts with `-----BEGIN PRIVATE KEY-----` and ends with `-----END PRIVATE KEY-----\n`. Copy the entire string, including those markers and the `\n` characters.
+3.  A **JSON file** will be downloaded to your computer (e.g., `my-project-firebase-adminsdk.json`).
+
+4.  **Encode the entire file contents to Base64.** You can do this easily online or with a command-line tool.
+    *   **Online Tool (Easy):** Go to [base64encode.org](https://www.base64encode.org/), choose "Encode files", upload your downloaded JSON file, and copy the resulting encoded string.
+    *   **Command Line (macOS/Linux):**
+        ```bash
+        # Replace the path with the actual path to your key file
+        base64 -i /path/to/your/downloaded-key-file.json
+        ```
+
+5.  **Set the Environment Variable**: Copy the single, long, encoded string and paste it as the value for `FIREBASE_ADMIN_SERVICE_ACCOUNT_BASE64` in your `.env.local` file. It should look like this:
+    ```
+    FIREBASE_ADMIN_SERVICE_ACCOUNT_BASE64=ZXlKb2RI...your-very-long-encoded-string...JrZCI6IiJ9
+    ```
 
 ### 3. Install Dependencies and Run Locally
 
@@ -61,7 +70,7 @@ For your deployed application on Vercel to work, you must also provide these env
 
 1.  Go to your project's dashboard on Vercel.
 2.  Navigate to **Settings > Environment Variables**.
-3.  Add each of the variables from your `.env.local` file (both `NEXT_PUBLIC_` and `FIREBASE_ADMIN_` variables).
-    *   For the `FIREBASE_ADMIN_PRIVATE_KEY`, paste the entire multi-line key value. Vercel will handle it correctly.
-4.  Ensure they are enabled for the **Production** environment (and Preview, if desired).
-5.  **Redeploy** your application to apply the changes. The new build will now have access to the credentials and will be able to fetch data from Firestore on the server.
+3.  Add each of the `NEXT_PUBLIC_` variables from your `.env.local` file.
+4.  Add the **single** `FIREBASE_ADMIN_SERVICE_ACCOUNT_BASE64` variable, pasting the same long, base64-encoded string you used locally.
+5.  Ensure all variables are enabled for the **Production** environment (and Preview, if desired).
+6.  **Redeploy** your application to apply the changes. The new build will now have access to the credentials and will be able to fetch data from Firestore on the server.
