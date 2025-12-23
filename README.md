@@ -38,16 +38,18 @@ These are for the Firebase SDK that runs in the user's browser.
 
 #### **Server-Side Admin Credentials (`FIREBASE_ADMIN_...`)**
 
-These are for the Firebase Admin SDK that runs on the server (for fetching product data securely).
+These are for the Firebase Admin SDK that runs on the server (for fetching product data securely). This requires a single, base64-encoded credential.
 
 1.  In your Firebase **Project settings**, go to the **"Service accounts"** tab.
 2.  Click the **"Generate new private key"** button. A JSON file will be downloaded to your computer.
-3.  Open the downloaded JSON file. It will contain your `project_id`, `client_email`, and `private_key`.
-4.  Copy these three values into the corresponding `FIREBASE_ADMIN_...` fields in your `.env.local` file.
-
-    **Important:** When you copy the `private_key`, make sure to copy the entire string, including the `-----BEGIN PRIVATE KEY-----` and `-----END PRIVATE KEY-----` parts.
-
-
+3.  **Base64 Encode the File:** You need to convert this entire file into a single line of text.
+    *   **On macOS or Linux:** Open a terminal and run this command, replacing the path with the actual path to your downloaded file:
+        ```bash
+        base64 -w 0 /path/to/your/serviceAccountKey.json
+        ```
+    *   **On Windows or using an online tool:** You can use an online base64 encoder. Upload your JSON file or paste its content to get the base64 string.
+4.  **Copy the Result:** The output will be a very long string of characters with no line breaks. Copy this entire string.
+5.  **Set the Environment Variable:** Paste the copied string as the value for `FIREBASE_ADMIN_SERVICE_ACCOUNT_BASE64` in your `.env.local` file.
 
 ---
 
@@ -89,7 +91,7 @@ There are two primary ways to set the admin claim:
 
 **Option A: Use the Admin Panel (Recommended)**
 
-If you already have an admin user, the easiest way is to use the UI:
+If you already have an existing admin user, the easiest way is to use the UI:
 1.  Log in as an existing admin.
 2.  Go to the **Admin Panel**.
 3.  Navigate to the **Users** tab.
