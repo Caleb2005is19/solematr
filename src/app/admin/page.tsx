@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/dialog"
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts"
 import { updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { getAdminUsers } from '@/lib/data';
+import { getAdminUsers } from '@/app/admin/_actions/get-users-action';
 
 type Order = {
   id: string;
@@ -472,19 +472,18 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     async function fetchUsers() {
         setUsersLoading(true);
-        try {
-            const fetchedUsers = await getAdminUsers();
-            setAdminUsers(fetchedUsers);
-        } catch (error) {
-            console.error("Failed to fetch users on client:", error);
+        const result = await getAdminUsers();
+        if (result.error) {
             toast({
                 variant: 'destructive',
                 title: 'Failed to load users',
-                description: (error as Error).message || "Could not fetch user list."
-            })
-        } finally {
-            setUsersLoading(false);
+                description: result.error
+            });
+            setAdminUsers([]);
+        } else {
+            setAdminUsers(result.users);
         }
+        setUsersLoading(false);
     }
     fetchUsers();
   }, [refreshKey, toast]);

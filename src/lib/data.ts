@@ -1,4 +1,3 @@
-
 import type { Shoe } from './types';
 import { adminDb, adminAuth } from './firebase-admin';
 import { notFound } from 'next/navigation';
