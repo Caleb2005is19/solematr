@@ -13,10 +13,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
 import { MoreHorizontal, Package, Users, DollarSign, Activity, Edit, Trash2, PlusCircle } from 'lucide-react';
 import { useAuth, useFirestore, useFunctions } from '@/firebase';
-import { doc, updateDoc, collectionGroup, collection, addDoc, deleteDoc, serverTimestamp, query, getDocs } from 'firebase/firestore';
+import { doc, updateDoc, collection, addDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -31,11 +41,10 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts"
-import { updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { getAdminUsers } from '@/app/admin/_actions/get-users-action';
+import { getAdminOrders } from './_actions/get-orders-action';
 
 type Order = {
   id: string;
@@ -135,11 +144,11 @@ function DashboardTab({ orders, users, shoes }: { orders: Order[] | null, users:
     )
 }
 
-function OrdersTab({ orders, loading, error }: { orders: Order[] | null, loading: boolean, error: Error | null }) {
+function OrdersTab({ orders, loading, onUpdate, error }: { orders: Order[] | null, loading: boolean, onUpdate: () => void, error: string | null }) {
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  const handleStatusUpdate = (orderId: string, userId: string, newStatus: Order['status']) => {
+  const handleStatusUpdate = async (orderId: string, userId: string, newStatus: Order['status']) => {
     if (!firestore || !userId) {
         toast({
             variant: "destructive",
@@ -148,16 +157,27 @@ function OrdersTab({ orders, loading, error }: { orders: Order[] | null, loading
         });
         return;
     };
+    
     const orderRef = doc(firestore, 'users', userId, 'orders', orderId);
-    updateDocumentNonBlocking(orderRef, { status: newStatus });
-    toast({
-        title: "Order Update Initiated",
-        description: `Order status changing to ${newStatus}.`,
-    });
+    
+    try {
+        await updateDoc(orderRef, { status: newStatus });
+        toast({
+            title: "Order Updated",
+            description: `Order status has been set to ${newStatus}.`,
+        });
+        onUpdate(); // Trigger a refresh of the order list
+    } catch (err: any) {
+        toast({
+            variant: "destructive",
+            title: "Update Failed",
+            description: err.message || "Could not update the order status.",
+        });
+    }
   };
   
   if (error) {
-    return <div className="text-destructive">Error loading orders: {error.message}</div>;
+    return <div className="text-destructive">Error loading orders: {error}</div>;
   }
 
   const sortedOrders = orders?.sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
@@ -254,6 +274,9 @@ function OrdersTab({ orders, loading, error }: { orders: Order[] | null, loading
 function ProductsTab({shoes, loading, error, onSave, onDelete}: {shoes: Shoe[] | null, loading: boolean, error: Error | null, onSave: () => void, onDelete: (shoeId: string) => void}) {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [selectedShoe, setSelectedShoe] = useState<Shoe | null>(null);
+    const [shoeToDelete, setShoeToDelete] = useState<string | null>(null);
+    const firestore = useFirestore();
+    const { toast } = useToast();
 
     const handleEdit = (shoe: Shoe) => {
         setSelectedShoe(shoe);
@@ -272,102 +295,144 @@ function ProductsTab({shoes, loading, error, onSave, onDelete}: {shoes: Shoe[] |
         }
     }
 
+    const confirmDelete = (shoeId: string) => {
+        setShoeToDelete(shoeId);
+    }
+
+    const executeDelete = async () => {
+        if (!shoeToDelete || !firestore) return;
+        
+        toast({ title: 'Deleting product...' });
+        const docRef = doc(firestore, 'shoes', shoeToDelete);
+
+        try {
+            await deleteDoc(docRef);
+            toast({ title: 'Product Deleted', description: 'The product has been removed from the store.' });
+            onDelete(shoeToDelete);
+        } catch (err: any) {
+             toast({
+                variant: 'destructive',
+                title: 'Deletion Failed',
+                description: err.message || 'Could not delete the product.',
+            });
+        } finally {
+            setShoeToDelete(null);
+        }
+    }
+
     return (
-        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-            <Card>
-                <CardHeader>
-                    <div className="flex justify-between items-center">
-                        <div>
-                            <CardTitle>Product Management</CardTitle>
-                            <CardDescription>Add, edit, or remove products from your store.</CardDescription>
+        <>
+            <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+                <Card>
+                    <CardHeader>
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <CardTitle>Product Management</CardTitle>
+                                <CardDescription>Add, edit, or remove products from your store.</CardDescription>
+                            </div>
+                            <Button onClick={handleAdd}><PlusCircle className="mr-2 h-4 w-4"/> Add Product</Button>
                         </div>
-                        <Button onClick={handleAdd}><PlusCircle className="mr-2 h-4 w-4"/> Add Product</Button>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="hidden w-[100px] sm:table-cell">Image</TableHead>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Brand</TableHead>
-                                <TableHead className="hidden md:table-cell">Price</TableHead>
-                                <TableHead><span className="sr-only">Actions</span></TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                             {loading ? (
-                                Array.from({ length: 5 }).map((_, i) => (
-                                    <TableRow key={i}>
-                                    <TableCell><Skeleton className="h-16 w-16" /></TableCell>
-                                    <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                                    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                                    <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-20" /></TableCell>
-                                    <TableCell><Skeleton className="h-8 w-8" /></TableCell>
-                                    </TableRow>
-                                ))
-                            ) : shoes && shoes.length > 0 ? (
-                                shoes.map((shoe) => (
-                                    <TableRow key={shoe.id}>
-                                        <TableCell className="hidden sm:table-cell">
-                                            <img
-                                                alt={shoe.name}
-                                                className="aspect-square rounded-md object-cover"
-                                                height="64"
-                                                src={shoe.images && shoe.images.length > 0 ? shoe.images[0].url : "https://placehold.co/64x64/EEE/31343C?text=No+Img"}
-                                                width="64"
-                                            />
-                                        </TableCell>
-                                        <TableCell className="font-medium">{shoe.name}</TableCell>
-                                        <TableCell>{shoe.brand}</TableCell>
-                                        <TableCell className="hidden md:table-cell">KSH {shoe.price.toFixed(2)}</TableCell>
-                                        <TableCell>
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                <Button aria-haspopup="true" size="icon" variant="ghost">
-                                                    <MoreHorizontal className="h-4 w-4" />
-                                                    <span className="sr-only">Toggle menu</span>
-                                                </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                <DropdownMenuItem onClick={() => handleEdit(shoe)}>
-                                                    <Edit className="mr-2 h-4 w-4"/>Edit
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem className="text-destructive" onClick={() => onDelete(shoe.id)}>
-                                                    <Trash2 className="mr-2 h-4 w-4"/>Delete
-                                                </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            ) : (
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
                                 <TableRow>
-                                    <TableCell colSpan={5} className="h-24 text-center">No products found.</TableCell>
+                                    <TableHead className="hidden w-[100px] sm:table-cell">Image</TableHead>
+                                    <TableHead>Name</TableHead>
+                                    <TableHead>Brand</TableHead>
+                                    <TableHead className="hidden md:table-cell">Price</TableHead>
+                                    <TableHead><span className="sr-only">Actions</span></TableHead>
                                 </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
-            <DialogContent className="sm:max-w-[800px]">
-                <DialogHeader>
-                    <DialogTitle>{selectedShoe ? 'Edit Product' : 'Add New Product'}</DialogTitle>
-                    <DialogDescription>
-                        {selectedShoe ? 'Update the details for this product.' : 'Fill in the form to add a new product to your store.'}
-                    </DialogDescription>
-                </DialogHeader>
-                <ProductForm shoe={selectedShoe} onFormSubmit={handleFormClose} />
-            </DialogContent>
-        </Dialog>
+                            </TableHeader>
+                            <TableBody>
+                                {loading ? (
+                                    Array.from({ length: 5 }).map((_, i) => (
+                                        <TableRow key={i}>
+                                        <TableCell><Skeleton className="h-16 w-16" /></TableCell>
+                                        <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                                        <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-20" /></TableCell>
+                                        <TableCell><Skeleton className="h-8 w-8" /></TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : shoes && shoes.length > 0 ? (
+                                    shoes.map((shoe) => (
+                                        <TableRow key={shoe.id}>
+                                            <TableCell className="hidden sm:table-cell">
+                                                <img
+                                                    alt={shoe.name}
+                                                    className="aspect-square rounded-md object-cover"
+                                                    height="64"
+                                                    src={shoe.images && shoe.images.length > 0 ? shoe.images[0].url : "https://placehold.co/64x64/EEE/31343C?text=No+Img"}
+                                                    width="64"
+                                                />
+                                            </TableCell>
+                                            <TableCell className="font-medium">{shoe.name}</TableCell>
+                                            <TableCell>{shoe.brand}</TableCell>
+                                            <TableCell className="hidden md:table-cell">KSH {shoe.price.toFixed(2)}</TableCell>
+                                            <TableCell>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                    <Button aria-haspopup="true" size="icon" variant="ghost">
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                        <span className="sr-only">Toggle menu</span>
+                                                    </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                    <DropdownMenuItem onClick={() => handleEdit(shoe)}>
+                                                        <Edit className="mr-2 h-4 w-4"/>Edit
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem className="text-destructive" onClick={() => confirmDelete(shoe.id)}>
+                                                        <Trash2 className="mr-2 h-4 w-4"/>Delete
+                                                    </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="h-24 text-center">No products found.</TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+                <DialogContent className="sm:max-w-[800px]">
+                    <DialogHeader>
+                        <DialogTitle>{selectedShoe ? 'Edit Product' : 'Add New Product'}</DialogTitle>
+                        <DialogDescription>
+                            {selectedShoe ? 'Update the details for this product.' : 'Fill in the form to add a new product to your store.'}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <ProductForm shoe={selectedShoe} onFormSubmit={handleFormClose} />
+                </DialogContent>
+            </Dialog>
+            
+            <AlertDialog open={!!shoeToDelete} onOpenChange={(open) => !open && setShoeToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete the product
+                        and remove its data from our servers.
+                    </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={executeDelete}>Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </>
     );
 }
 
 function UsersTab({initialUsers, loading, onAdminMade}: {initialUsers: AppUser[] | null, loading: boolean, onAdminMade: () => void}) {
   const { toast } = useToast();
   const functions = useFunctions();
-  const [users, setUsers] = useState(initialUsers);
   
   const handleMakeAdmin = async (userId: string) => {
     if (!functions) return;
@@ -417,8 +482,8 @@ function UsersTab({initialUsers, loading, onAdminMade}: {initialUsers: AppUser[]
                   <TableCell className="text-right"><Skeleton className="h-8 w-24" /></TableCell>
                 </TableRow>
               ))
-            ) : users && users.length > 0 ? (
-                users.map(user => (
+            ) : initialUsers && initialUsers.length > 0 ? (
+                initialUsers.map(user => (
                 <TableRow key={user.id}>
                     <TableCell>{user.displayName || 'N/A'}</TableCell>
                     <TableCell>{user.email}</TableCell>
@@ -449,26 +514,25 @@ function UsersTab({initialUsers, loading, onAdminMade}: {initialUsers: AppUser[]
 
 export default function AdminDashboardPage() {
   const firestore = useFirestore();
-  const auth = useAuth();
   const { toast } = useToast();
   const [refreshKey, setRefreshKey] = useState(0);
+
   const [adminUsers, setAdminUsers] = useState<AppUser[] | null>(null);
   const [usersLoading, setUsersLoading] = useState(true);
 
-  // --- DATA FETCHING ---
-  const ordersQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return collectionGroup(firestore, 'orders');
-  }, [firestore, refreshKey]);
+  const [orders, setOrders] = useState<Order[] | null>(null);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+  const [ordersError, setOrdersError] = useState<string | null>(null);
 
+  // --- DATA FETCHING ---
   const shoesQuery = useMemoFirebase(() => {
     if(!firestore) return null;
     return collection(firestore, 'shoes');
   }, [firestore, refreshKey]);
 
-  const { data: orders, loading: ordersLoading, error: ordersError } = useCollection<Order>(ordersQuery);
   const { data: shoes, loading: shoesLoading, error: shoesError } = useCollection<Shoe>(shoesQuery);
   
+  // Fetch users
   useEffect(() => {
     async function fetchUsers() {
         setUsersLoading(true);
@@ -488,21 +552,37 @@ export default function AdminDashboardPage() {
     fetchUsers();
   }, [refreshKey, toast]);
 
+  // Fetch orders
+  useEffect(() => {
+    async function fetchOrders() {
+        setOrdersLoading(true);
+        const result = await getAdminOrders();
+        if (result.error) {
+            toast({
+                variant: 'destructive',
+                title: 'Failed to load orders',
+                description: result.error
+            });
+            setOrders([]);
+            setOrdersError(result.error);
+        } else {
+            setOrders(result.orders);
+            setOrdersError(null);
+        }
+        setOrdersLoading(false);
+    }
+    fetchOrders();
+  }, [refreshKey, toast]);
 
-  const handleProductSave = () => {
+  const handleRefresh = () => {
     setRefreshKey(k => k + 1);
   }
 
-  const handleProductDelete = (shoeId: string) => {
-    if (!firestore) return;
-    if (!confirm('Are you sure you want to delete this product? This cannot be undone.')) return;
-    
-    toast({ title: 'Deleting product...' });
-    const docRef = doc(firestore, 'shoes', shoeId);
-    deleteDocumentNonBlocking(docRef);
-    toast({ title: 'Product deletion initiated.' });
-    setRefreshKey(k => k + 1);
-  };
+  const handleProductDelete = () => {
+      // Deletion happens in the component, just refresh the list
+      setRefreshKey(k => k + 1);
+  }
+
 
   return (
     <div className="flex flex-col gap-8">
@@ -524,15 +604,17 @@ export default function AdminDashboardPage() {
             <DashboardTab orders={orders} users={adminUsers} shoes={shoes} />
         </TabsContent>
         <TabsContent value="orders">
-          <OrdersTab orders={orders} loading={ordersLoading} error={ordersError} />
+          <OrdersTab orders={orders} loading={ordersLoading} onUpdate={handleRefresh} error={ordersError} />
         </TabsContent>
         <TabsContent value="products">
-          <ProductsTab shoes={shoes} loading={shoesLoading} error={shoesError} onSave={handleProductSave} onDelete={handleProductDelete} />
+          <ProductsTab shoes={shoes} loading={shoesLoading} error={shoesError} onSave={handleRefresh} onDelete={handleProductDelete} />
         </TabsContent>
         <TabsContent value="users">
-          <UsersTab initialUsers={adminUsers} loading={usersLoading} onAdminMade={() => setRefreshKey(k => k + 1)} />
+          <UsersTab initialUsers={adminUsers} loading={usersLoading} onAdminMade={handleRefresh} />
         </TabsContent>
       </Tabs>
     </div>
   );
 }
+
+    
