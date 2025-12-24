@@ -24,7 +24,7 @@ service cloud.firestore {
      * - Admin Order Access: Admins can read from any 'orders' collection group,
      *   allowing them to view all orders in the system for fulfillment.
      * - No User Enumeration: Listing documents in the top-level `/users`
-     *   collection is disabled to protect user privacy.
+     *   collection is disabled to protect user privacy, unless the user is an admin.
      *
      * Denormalization for Authorization: The data model is well-designed. By nesting
      * all user-specific data under `/users/{userId}`, the user's ID is part of the
@@ -122,7 +122,7 @@ service cloud.firestore {
      * @principle Enforces self-creation and ownership of a user's root document.
      */
     match /users/{userId} {
-      allow get: if isOwner(userId);
+      allow get: if isOwner(userId) || isAdmin();
       allow list: if isAdmin();
       allow create: if isOwner(userId) && isUserDocumentDataConsistentOnCreate(userId);
       allow update: if isExistingOwner(userId) && isUserDocumentIdImmutable();
