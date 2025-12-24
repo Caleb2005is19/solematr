@@ -45,6 +45,7 @@ import {
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts"
 import { getAdminUsers } from '@/app/admin/_actions/get-users-action';
 import { getAdminOrders } from './_actions/get-orders-action';
+import { getPlaceholderImage } from '@/lib/placeholder-images';
 
 type Order = {
   id: string;
@@ -277,6 +278,7 @@ function ProductsTab({shoes, loading, error, onSave, onDelete}: {shoes: Shoe[] |
     const [shoeToDelete, setShoeToDelete] = useState<string | null>(null);
     const firestore = useFirestore();
     const { toast } = useToast();
+    const noImagePlaceholder = getPlaceholderImage('placeholder-no-image');
 
     const handleEdit = (shoe: Shoe) => {
         setSelectedShoe(shoe);
@@ -302,7 +304,6 @@ function ProductsTab({shoes, loading, error, onSave, onDelete}: {shoes: Shoe[] |
     const executeDelete = async () => {
         if (!shoeToDelete || !firestore) return;
         
-        toast({ title: 'Deleting product...' });
         const docRef = doc(firestore, 'shoes', shoeToDelete);
 
         try {
@@ -363,7 +364,7 @@ function ProductsTab({shoes, loading, error, onSave, onDelete}: {shoes: Shoe[] |
                                                     alt={shoe.name}
                                                     className="aspect-square rounded-md object-cover"
                                                     height="64"
-                                                    src={shoe.images && shoe.images.length > 0 ? shoe.images[0].url : "https://placehold.co/64x64/EEE/31343C?text=No+Img"}
+                                                    src={shoe.images && shoe.images.length > 0 ? shoe.images[0].url : noImagePlaceholder?.imageUrl}
                                                     width="64"
                                                 />
                                             </TableCell>
@@ -530,7 +531,7 @@ export default function AdminDashboardPage() {
     return collection(firestore, 'shoes');
   }, [firestore, refreshKey]);
 
-  const { data: shoes, loading: shoesLoading, error: shoesError } = useCollection<Shoe>(shoesQuery);
+  const { data: shoes, isLoading: shoesLoading, error: shoesError } = useCollection<Shoe>(shoesQuery);
   
   // Fetch users
   useEffect(() => {
@@ -607,7 +608,7 @@ export default function AdminDashboardPage() {
           <OrdersTab orders={orders} loading={ordersLoading} onUpdate={handleRefresh} error={ordersError} />
         </TabsContent>
         <TabsContent value="products">
-          <ProductsTab shoes={shoes} loading={shoesLoading} error={shoesError} onSave={handleRefresh} onDelete={handleProductDelete} />
+          <ProductsTab shoes={shoes} loading={shoesLoading} error={shoesError as Error | null} onSave={handleRefresh} onDelete={handleProductDelete} />
         </TabsContent>
         <TabsContent value="users">
           <UsersTab initialUsers={adminUsers} loading={usersLoading} onAdminMade={handleRefresh} />
@@ -616,5 +617,3 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
-
-    

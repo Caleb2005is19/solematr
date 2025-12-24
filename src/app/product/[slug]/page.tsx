@@ -18,6 +18,7 @@ import { BrowsingHistoryTracker } from './_components/browsing-history-tracker';
 import type { Metadata, ResolvingMetadata } from 'next';
 import Breadcrumbs from '@/components/breadcrumbs';
 import ShoeCard from '@/components/shoe-card';
+import { getPlaceholderImage } from '@/lib/placeholder-images';
 
 type Props = {
   params: { slug: string }
@@ -66,6 +67,7 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
 
   const allShoes = await getShoes();
   const relatedProducts = allShoes.filter(p => p.category === shoe.category && p.id !== shoe.id).slice(0, 4);
+  const noImagePlaceholder = getPlaceholderImage('placeholder-no-image');
 
   return (
     <>
@@ -103,13 +105,15 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
                  <CarouselItem>
                   <Card className="overflow-hidden rounded-xl border-none">
                     <CardContent className="flex aspect-square md:aspect-video items-center justify-center p-0 bg-secondary">
-                       <Image
-                          src="https://placehold.co/600x400/EEE/31343C?text=No+Image"
-                          alt={shoe.name}
-                          width={1200}
-                          height={800}
-                          className="object-cover w-full h-full"
-                        />
+                       {noImagePlaceholder && (
+                         <Image
+                            src={noImagePlaceholder.imageUrl}
+                            alt={noImagePlaceholder.description}
+                            width={1200}
+                            height={800}
+                            className="object-cover w-full h-full"
+                          />
+                       )}
                     </CardContent>
                   </Card>
                 </CarouselItem>
@@ -176,5 +180,3 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
     </>
   );
 }
-
-    

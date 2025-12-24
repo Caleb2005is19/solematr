@@ -1,94 +1,46 @@
 {
   "placeholderImages": [
     {
-      "id": "classic-runner-1",
-      "description": "Side view of the Classic Runner shoe.",
+      "id": "hero-background",
+      "description": "Vibrant sneakers on display, suggesting fashion and style.",
+      "imageUrl": "https://images.unsplash.com/photo-1549298916-b41d501d3772?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxuaWtlJTIwc2hvZXN8ZW58MHx8fHwxNzU5NTQwODU0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "Nairobi fashion"
+    },
+    {
+      "id": "category-streetwear",
+      "description": "A person wearing hightop sneakers, representing streetwear style.",
+      "imageUrl": "https://images.unsplash.com/photo-1645846123684-f6f33a2eb3ec?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxoaWdodG9wJTIwc25lYWtlcnxlbnwwfHx8fDE3NTk1NjM2NDN8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "hightop sneakers"
+    },
+    {
+      "id": "category-running",
+      "description": "A pair of running shoes, ready for action.",
       "imageUrl": "https://images.unsplash.com/photo-1597892657493-6847b9640bac?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxydW5uaW5nJTIwc2hvZXxlbnwwfHx8fDE3NTk1NjM2NDN8MA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "running shoe"
     },
     {
-      "id": "classic-runner-2",
-      "description": "Angled view of the Classic Runner shoe.",
-      "imageUrl": "https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxydW5uaW5nJTIwc2hvZXxlbnwwfHx8fDE3NTk1NjM2NDN8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "running shoe"
-    },
-    {
-      "id": "high-top-sneaker-1",
-      "description": "Side view of the High-Top Sneaker.",
-      "imageUrl": "https://images.unsplash.com/photo-1645846123684-f6f33a2eb3ec?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxoaWdodG9wJTIwc25lYWtlcnxlbnwwfHx8fDE3NTk1NjM2NDN8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "hightop sneaker"
-    },
-    {
-      "id": "high-top-sneaker-2",
-      "description": "Detail view of the High-Top Sneaker's texture.",
-      "imageUrl": "https://images.unsplash.com/photo-1532336235111-af6e09413b94?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxzbmVha2VyJTIwdGV4dHVyZXxlbnwwfHx8fDE3NTk1NjM2NDN8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "sneaker texture"
-    },
-    {
-      "id": "suede-loafer-1",
-      "description": "Top-down view of the Suede Loafers.",
-      "imageUrl": "https://images.unsplash.com/photo-1601731597613-74130df0e01d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxzdWVkZSUyMHNob2V8ZW58MHx8fHwxNzU5NTYzNjQzfDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "suede shoe"
-    },
-    {
-      "id": "suede-loafer-2",
-      "description": "Close-up on the stitching of the Suede Loafers.",
-      "imageUrl": "https://images.unsplash.com/photo-1680576554937-33a8748c09fd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxzaG9lJTIwc3RpdGNoaW5nfGVufDB8fHx8MTc1OTU2MzY0M3ww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "shoe stitching"
-    },
-    {
-      "id": "leather-boot-1",
-      "description": "Side profile of the Leather Boot.",
-      "imageUrl": "https://images.unsplash.com/photo-1638158980051-f7e67291efed?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxsZWF0aGVyJTIwYm9vdHxlbnwwfHx8fDE3NTk1NDE0OTB8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "leather boot"
-    },
-    {
-      "id": "leather-boot-2",
-      "description": "View of the Leather Boot's sole.",
-      "imageUrl": "https://images.unsplash.com/photo-1626432424546-104e5fdbe556?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8Ym9vdCUyMHNvbGV8ZW58MHx8fHwxNzU5NTYzNjQzfDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "boot sole"
-    },
-    {
-      "id": "sport-sandal-1",
-      "description": "A pair of Sport Sandals.",
-      "imageUrl": "https://images.unsplash.com/photo-1704993469311-cec36ce6bf5c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8c3BvcnQlMjBzYW5kYWx8ZW58MHx8fHwxNzU5NTYzNjQzfDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "sport sandal"
-    },
-    {
-      "id": "sport-sandal-2",
-      "description": "Close-up of the Sport Sandal straps.",
-      "imageUrl": "https://images.unsplash.com/photo-1699205016685-670f026cf4f3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxzYW5kYWwlMjBzdHJhcHN8ZW58MHx8fHwxNzU5NTYzNjQzfDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "sandal straps"
-    },
-    {
-      "id": "urban-explorer-1",
-      "description": "Side view of the Urban Explorer shoe.",
-      "imageUrl": "https://images.unsplash.com/photo-1606890541157-5b11f168e8cf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8bW9kZXJuJTIwc25lYWtlcnxlbnwwfHx8fDE3NTk0Nzg1MzR8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "modern sneaker"
-    },
-    {
-      "id": "urban-explorer-2",
-      "description": "Heel detail of the Urban Explorer shoe.",
-      "imageUrl": "https://images.unsplash.com/photo-1704949845080-c26d5c12817d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxzbmVha2VyJTIwaGVlbHxlbnwwfHx8fDE3NTk1NjM2NDN8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "sneaker heel"
-    },
-    {
-      "id": "vintage-wingtip-1",
-      "description": "Classic Vintage Wingtip shoes.",
+      "id": "category-formal",
+      "description": "Elegant leather dress shoes.",
       "imageUrl": "https://images.unsplash.com/photo-1611937674427-01cd37d36732?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxkcmVzcyUyMHNob2V8ZW58MHx8fHwxNzU5NTA4MTY3fDA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "dress shoe"
     },
     {
-      "id": "vintage-wingtip-2",
-      "description": "Detail of the broguing on the Vintage Wingtips.",
-      "imageUrl": "https://images.unsplash.com/photo-1582625307252-1686ee635399?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxicm9ndWUlMjBkZXRhaWx8ZW58MHx8fHwxNzU5NTYzNjQzfDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "brogue detail"
+      "id": "category-boots",
+      "description": "A pair of sturdy leather boots.",
+      "imageUrl": "https://images.unsplash.com/photo-1638158980051-f7e67291efed?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxsZWF0aGVyJTIwYm9vdHxlbnwwfHx8fDE3NTk1NDE0OTB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "leather boot"
     },
     {
-      "id": "canvas-slipon-1",
-      "description": "A pair of Canvas Slip-On shoes.",
-      "imageUrl": "https://images.unsplash.com/photo-1634579335989-769a493be0ef?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxjYW52YXMlMjBzaG9lfGVufDB8fHx8MTc1OTU0OTk4OHww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "canvas shoe"
+      "id": "placeholder-no-image",
+      "description": "A generic placeholder for when no image is available.",
+      "imageUrl": "https://placehold.co/600x400/EEE/31343C?text=No+Img",
+      "imageHint": "placeholder"
+    },
+    {
+      "id": "placeholder-new-product",
+      "description": "Generic placeholder for a newly created product.",
+      "imageUrl": "https://images.unsplash.com/photo-1664817508609-9aead4d5707d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxzaG9lJTIwcGhvdG98ZW58MHx8fHwxNzY2NTgyOTY4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "shoe photo"
     }
   ]
 }

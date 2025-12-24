@@ -4,15 +4,18 @@ import Image from 'next/image';
 import type { Shoe } from '@/lib/types';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { getPlaceholderImage } from '@/lib/placeholder-images';
 
 interface ShoeCardProps {
   shoe: Shoe;
 }
 
 export default function ShoeCard({ shoe }: ShoeCardProps) {
+  const noImagePlaceholder = getPlaceholderImage('placeholder-no-image');
+  
   const imageUrl = shoe.images && shoe.images.length > 0
     ? shoe.images[0].url
-    : "https://placehold.co/600x400/EEE/31343C?text=No+Image";
+    : noImagePlaceholder?.imageUrl ?? '';
   
   const imageAlt = shoe.images && shoe.images.length > 0
     ? shoe.images[0].alt
@@ -49,5 +52,3 @@ export default function ShoeCard({ shoe }: ShoeCardProps) {
     </Link>
   );
 }
-
-    

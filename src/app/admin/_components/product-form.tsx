@@ -30,6 +30,7 @@ import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { doc, setDoc, addDoc, collection } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { getPlaceholderImage } from '@/lib/placeholder-images';
 
 const formSchema = z.object({
   id: z.string().optional(),
@@ -101,11 +102,18 @@ export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
     if (!firestore) return;
     setIsSubmitting(true);
 
+    const newProductPlaceholder = getPlaceholderImage('placeholder-new-product');
+    const imageUrl = newProductPlaceholder
+      ? newProductPlaceholder.imageUrl.replace('{{SEED}}', data.name.replace(/\s+/g, '-'))
+      : '';
+    
+    const imageHint = newProductPlaceholder ? newProductPlaceholder.imageHint : 'shoe photo';
+
     const images = (shoe?.images && shoe.images.length > 0) ? shoe.images : [{
         id: 'placeholder-new',
-        url: `https://picsum.photos/seed/${data.name.replace(/\s+/g, '-')}/600/400`,
+        url: imageUrl,
         alt: `A photo of ${data.name}`,
-        hint: 'shoe photo'
+        hint: imageHint,
     }];
 
 
