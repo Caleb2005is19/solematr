@@ -28,5 +28,3 @@ export async function getAdminOrders() {
         return { error: "You do not have permission to view orders or an internal error occurred." };
     }
 }
-
-    

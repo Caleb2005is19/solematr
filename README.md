@@ -30,7 +30,7 @@ These are for the Firebase SDK that runs in the user's browser.
 4.  In the "General" tab, scroll down to the "Your apps" section.
 5.  Click on your web app.
 6.  Select **"Config"** to view the `firebaseConfig` object.
-7.  Copy the values into the corresponding `NEXT_PUBLIC_...` fields in your `.env.local` file.
+7.  Copy the values into the corresponding `NEXT_PUBLIC_...` fields in your `.env.local` file. The `storageBucket` value can be found in your project's **Storage** section on the Firebase Console.
 
 #### B. Server-Side Admin Credentials (Secret)
 

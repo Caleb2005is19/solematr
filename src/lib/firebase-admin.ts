@@ -6,11 +6,12 @@ import type { ServiceAccount } from 'firebase-admin';
 let adminApp: admin.App | undefined;
 
 function initializeAdminApp(): admin.App | undefined {
+  // Return if memoized
   if (adminApp) {
     return adminApp;
   }
   
-  // Return if already initialized
+  // Return if already initialized by another means
   if (admin.apps.length > 0) {
     adminApp = admin.app();
     return adminApp;
@@ -20,11 +21,14 @@ function initializeAdminApp(): admin.App | undefined {
 
   try {
     if (!FIREBASE_ADMIN_SERVICE_ACCOUNT_BASE64) {
-      console.warn(
-        'WARNING: Firebase Admin credentials are not set in the `FIREBASE_ADMIN_SERVICE_ACCOUNT_BASE64` environment variable. ' +
-        'Server-side data fetching will be disabled. ' +
-        'See README.md for setup instructions.'
-      );
+      // Don't log a full warning in production/build environments, just return.
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(
+          'WARNING: Firebase Admin credentials are not set in the `FIREBASE_ADMIN_SERVICE_ACCOUNT_BASE64` environment variable. ' +
+          'Server-side data fetching will be disabled. ' +
+          'See README.md for setup instructions.'
+        );
+      }
       return undefined;
     }
 
@@ -32,6 +36,7 @@ function initializeAdminApp(): admin.App | undefined {
     const serviceAccountJson = Buffer.from(FIREBASE_ADMIN_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf-8');
     const serviceAccount = JSON.parse(serviceAccountJson) as ServiceAccount;
 
+    // Memoize the initialized app
     adminApp = admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
     });
@@ -47,10 +52,8 @@ function initializeAdminApp(): admin.App | undefined {
   }
 }
 
-// Initialize on module load
-initializeAdminApp();
 
-// Export functions that return the initialized services
+// Export functions that attempt to initialize and then return the services
 export const getAdminDb = (): FirebaseFirestore.Firestore | null => {
   const app = initializeAdminApp();
   return app ? admin.firestore(app) : null;
@@ -61,7 +64,7 @@ export const getAdminAuth = (): admin.auth.Auth | null => {
   return app ? admin.auth(app) : null;
 };
 
-// For convenience, export the instances directly.
-// They will be null if the app isn't initialized.
+// For convenience, export lazy-loaded instances.
+// They will be null if the app can't be initialized.
 export const adminDb = getAdminDb();
 export const adminAuth = getAdminAuth();

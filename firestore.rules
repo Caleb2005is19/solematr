@@ -110,7 +110,7 @@ service cloud.firestore {
      */
     match /shoes/{shoeId} {
       allow get, list: if true;
-      allow create, update, delete: if isAdmin();
+      allow write: if isAdmin();
     }
 
     /**
@@ -151,7 +151,7 @@ service cloud.firestore {
        */
       match /orders/{orderId} {
         // Collection Group Rule for Admins is defined below
-        allow get, list: if isOwner(userId);
+        allow get, list: if isOwner(userId) || isAdmin();
         allow create: if isOwner(userId) && isOwnerDataConsistentOnCreate(userId);
         // Admins can update status, but owners shouldn't change historical orders.
         allow update: if isAdmin(); 
@@ -165,7 +165,7 @@ service cloud.firestore {
          * @principle Inherits ownership from the parent path, restricting access to the data owner.
          */
         match /order_items/{orderItemId} {
-          allow get, list: if isOwner(userId);
+          allow get, list: if isOwner(userId) || isAdmin();
           // In a real-world scenario, order_items are typically created via a server-side
           // transaction when an order is placed, not directly by the client.
           // For prototyping, we allow the owner to create them.

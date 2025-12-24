@@ -1,3 +1,4 @@
+
 import type { Shoe } from './types';
 import { adminDb, adminAuth } from './firebase-admin';
 import { notFound } from 'next/navigation';
@@ -67,17 +68,17 @@ export async function getShoes(filters?: { type?: string; category?: string; bra
  * Fetches a single shoe by its ID (slug) from Firestore.
  * This function is for SERVER-SIDE use only.
  */
-export async function getShoeBySlug(slug: string): Promise<Shoe | undefined> {
+export async function getShoeBySlug(slug: string): Promise<Shoe | null> {
    if (!adminDb) {
-    console.log("Admin SDK not initialized. Returning undefined for getShoeBySlug.");
-    return undefined;
+    console.error("Admin SDK not initialized. Cannot fetch shoe.");
+    notFound();
   }
   try {
     const docRef = adminDb.collection('shoes').doc(slug);
     const docSnap = await docRef.get();
 
     if (!docSnap.exists) {
-      return undefined;
+      notFound();
     }
     
     const data = docSnap.data();
@@ -88,7 +89,7 @@ export async function getShoeBySlug(slug: string): Promise<Shoe | undefined> {
     } as Shoe;
   } catch (error) {
     console.error(`Error fetching shoe with slug ${slug}:`, error);
-    return undefined;
+    notFound();
   }
 }
 
@@ -98,10 +99,7 @@ export async function getShoeBySlug(slug: string): Promise<Shoe | undefined> {
  */
 export async function getShoeById(id: string): Promise<Shoe | null> {
     const shoe = await getShoeBySlug(id);
-    if (!shoe) {
-        // This will trigger the not-found page in Next.js
-        notFound();
-    }
+    // getShoeBySlug will call notFound() internally if shoe doesn't exist.
     return shoe;
 }
 
@@ -227,8 +225,8 @@ type AppUser = {
 
 export async function getAdminUsers(): Promise<AppUser[]> {
     if (!adminAuth) {
-        console.log("Admin SDK not initialized. Returning empty array for getAdminUsers.");
-        return [];
+        console.error("Admin Auth SDK not initialized. Cannot list users.");
+        throw new Error("You do not have permission to list users.");
     }
     try {
         const userRecords = await adminAuth.listUsers();

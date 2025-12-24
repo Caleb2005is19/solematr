@@ -62,6 +62,7 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
   const shoe = await getShoeBySlug(slug);
 
   if (!shoe) {
+    // getShoeBySlug calls notFound() internally, but we can have it here as a safeguard.
     notFound();
   }
 
@@ -180,3 +181,5 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
     </>
   );
 }
+
+    

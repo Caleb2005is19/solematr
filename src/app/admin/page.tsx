@@ -579,9 +579,9 @@ export default function AdminDashboardPage() {
     setRefreshKey(k => k + 1);
   }
 
-  const handleProductDelete = () => {
-      // Deletion happens in the component, just refresh the list
-      setRefreshKey(k => k + 1);
+  const handleProductDelete = (deletedShoeId: string) => {
+    // Optimistically update the UI by removing the deleted shoe from the state
+    setRefreshKey(k => k + 1);
   }
 
 
