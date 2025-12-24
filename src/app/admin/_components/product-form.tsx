@@ -26,10 +26,10 @@ import { useFirestore } from '@/firebase';
 import type { Shoe } from '@/lib/types';
 import { useState } from 'react';
 import { Loader2, Plus, Trash2 } from 'lucide-react';
-import { updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { doc } from 'firebase/firestore';
+import { doc, setDoc, addDoc, collection } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
   id: z.string().optional(),
@@ -59,6 +59,7 @@ const COMMON_SIZES = [7, 7.5, 8, 8.5, 9, 9.5, 10, 10.5, 11, 11.5, 12, 13];
 
 export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
   const firestore = useFirestore();
+  const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [customSizeInput, setCustomSizeInput] = useState('');
   
@@ -96,7 +97,7 @@ export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
     form.setValue('sizes', newSizes, { shouldValidate: true });
   }
 
-  const onSubmit = (data: ProductFormValues) => {
+  const onSubmit = async (data: ProductFormValues) => {
     if (!firestore) return;
     setIsSubmitting(true);
 
@@ -122,18 +123,35 @@ export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
         isOnSale: data.isOnSale
     };
 
-    if (shoe?.id) {
-        // Update existing document
-        const docRef = doc(firestore, 'shoes', shoe.id);
-        updateDocumentNonBlocking(docRef, shoeData);
-    } else {
-        // Create new document
-        addDocumentNonBlocking(firestore, 'shoes', shoeData);
+    try {
+      if (shoe?.id) {
+          // Update existing document
+          const docRef = doc(firestore, 'shoes', shoe.id);
+          await setDoc(docRef, shoeData, { merge: true });
+          toast({
+              title: "Product Updated",
+              description: `${shoeData.name} has been successfully updated.`,
+          });
+      } else {
+          // Create new document
+          await addDoc(collection(firestore, 'shoes'), shoeData);
+          toast({
+              title: "Product Created",
+              description: `${shoeData.name} has been added to the store.`,
+          });
+      }
+      onFormSubmit(true);
+    } catch (error: any) {
+        console.error("Error saving product:", error);
+        toast({
+            variant: "destructive",
+            title: "Save Failed",
+            description: error.message || "An unknown error occurred.",
+        });
+        onFormSubmit(false);
+    } finally {
+        setIsSubmitting(false);
     }
-    
-    // Optimistically close the form
-    onFormSubmit(true);
-    setIsSubmitting(false);
   };
 
   const customSizes = currentSizes.filter(s => !COMMON_SIZES.includes(s));

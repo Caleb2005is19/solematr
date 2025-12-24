@@ -358,7 +358,7 @@ function ProductsTab({shoes, loading, error, onSave, onDelete}: {shoes: Shoe[] |
                         {selectedShoe ? 'Update the details for this product.' : 'Fill in the form to add a new product to your store.'}
                     </DialogDescription>
                 </DialogHeader>
-                <ProductForm shoe={selectedShoe} onFormSubmit={() => handleFormClose(true)} />
+                <ProductForm shoe={selectedShoe} onFormSubmit={handleFormClose} />
             </DialogContent>
         </Dialog>
     );
@@ -490,7 +490,6 @@ export default function AdminDashboardPage() {
 
 
   const handleProductSave = () => {
-    toast({ title: 'Product saved successfully!' });
     setRefreshKey(k => k + 1);
   }
 
