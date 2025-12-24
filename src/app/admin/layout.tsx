@@ -11,23 +11,27 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
   useEffect(() => {
+    // Don't do anything until Firebase auth state is resolved
     if (isUserLoading) {
       return; 
     }
 
+    // If no user, redirect to home
     if (!user) {
       router.replace('/'); 
       return;
     }
 
+    // User is available, check for admin claim
     user.getIdTokenResult(true).then(idTokenResult => {
       const isAdminClaim = !!idTokenResult.claims.admin;
       setIsAdmin(isAdminClaim);
       if (!isAdminClaim) {
-        console.log("User is not an admin, redirecting.");
+        // If not an admin, redirect
         router.replace('/'); 
       }
     }).catch(error => {
+        // If there's an error getting the token, treat as not admin
         console.error("Error getting ID token result:", error);
         setIsAdmin(false);
         router.replace('/');
@@ -36,6 +40,7 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
   }, [user, isUserLoading, router]);
 
 
+  // While checking user status and admin claim, show a loading state
   if (isAdmin === null || isUserLoading) {
     return (
       <div className="flex justify-center items-center min-h-[50vh]">
@@ -45,10 +50,12 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
+  // If the user is a confirmed admin, render the content
   if (isAdmin) {
     return <>{children}</>;
   }
 
+  // If not admin, this will be null while redirecting
   return null;
 }
 
