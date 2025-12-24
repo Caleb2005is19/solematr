@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/dialog"
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts"
 import { updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { getAdminUsers } from '@/lib/data';
 
 type Order = {
   id: string;
@@ -363,9 +364,10 @@ function ProductsTab({shoes, loading, error, onSave, onDelete}: {shoes: Shoe[] |
     );
 }
 
-function UsersTab({users, loading, onAdminMade}: {users: AppUser[], loading: boolean, onAdminMade: () => void}) {
+function UsersTab({initialUsers, loading, onAdminMade}: {initialUsers: AppUser[] | null, loading: boolean, onAdminMade: () => void}) {
   const { toast } = useToast();
   const functions = useFunctions();
+  const [users, setUsers] = useState(initialUsers);
   
   const handleMakeAdmin = async (userId: string) => {
     if (!functions) return;
@@ -415,18 +417,26 @@ function UsersTab({users, loading, onAdminMade}: {users: AppUser[], loading: boo
                   <TableCell className="text-right"><Skeleton className="h-8 w-24" /></TableCell>
                 </TableRow>
               ))
-            ) : users.map(user => (
-              <TableRow key={user.id}>
-                <TableCell>{user.displayName || 'N/A'}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell className="font-mono text-xs">{user.id}</TableCell>
-                <TableCell className="text-right">
-                  <Button variant="outline" size="sm" onClick={() => handleMakeAdmin(user.id)}>
-                    Make Admin
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
+            ) : users && users.length > 0 ? (
+                users.map(user => (
+                <TableRow key={user.id}>
+                    <TableCell>{user.displayName || 'N/A'}</TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell className="font-mono text-xs">{user.id}</TableCell>
+                    <TableCell className="text-right">
+                    <Button variant="outline" size="sm" onClick={() => handleMakeAdmin(user.id)}>
+                        Make Admin
+                    </Button>
+                    </TableCell>
+                </TableRow>
+                ))
+            ) : (
+                <TableRow>
+                    <TableCell colSpan={4} className="h-24 text-center">
+                        No users found.
+                    </TableCell>
+                </TableRow>
+            )}
           </TableBody>
         </Table>
       </CardContent>
@@ -442,16 +452,13 @@ export default function AdminDashboardPage() {
   const auth = useAuth();
   const { toast } = useToast();
   const [refreshKey, setRefreshKey] = useState(0);
+  const [adminUsers, setAdminUsers] = useState<AppUser[] | null>(null);
+  const [usersLoading, setUsersLoading] = useState(true);
 
   // --- DATA FETCHING ---
   const ordersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return collectionGroup(firestore, 'orders');
-  }, [firestore, refreshKey]);
-
-  const usersQuery = useMemoFirebase(() => {
-    if(!firestore) return null;
-    return collection(firestore, 'users');
   }, [firestore, refreshKey]);
 
   const shoesQuery = useMemoFirebase(() => {
@@ -460,9 +467,29 @@ export default function AdminDashboardPage() {
   }, [firestore, refreshKey]);
 
   const { data: orders, loading: ordersLoading, error: ordersError } = useCollection<Order>(ordersQuery);
-  const { data: users, loading: usersLoading, error: usersError } = useCollection<AppUser>(usersQuery);
   const { data: shoes, loading: shoesLoading, error: shoesError } = useCollection<Shoe>(shoesQuery);
   
+  useEffect(() => {
+    async function fetchUsers() {
+        setUsersLoading(true);
+        try {
+            const fetchedUsers = await getAdminUsers();
+            setAdminUsers(fetchedUsers);
+        } catch (error) {
+            console.error("Failed to fetch users on client:", error);
+            toast({
+                variant: 'destructive',
+                title: 'Failed to load users',
+                description: (error as Error).message || "Could not fetch user list."
+            })
+        } finally {
+            setUsersLoading(false);
+        }
+    }
+    fetchUsers();
+  }, [refreshKey, toast]);
+
+
   const handleProductSave = () => {
     toast({ title: 'Product saved successfully!' });
     setRefreshKey(k => k + 1);
@@ -496,7 +523,7 @@ export default function AdminDashboardPage() {
           <TabsTrigger value="users"><Users className="mr-2 h-4 w-4"/>Users</TabsTrigger>
         </TabsList>
         <TabsContent value="dashboard">
-            <DashboardTab orders={orders} users={users} shoes={shoes} />
+            <DashboardTab orders={orders} users={adminUsers} shoes={shoes} />
         </TabsContent>
         <TabsContent value="orders">
           <OrdersTab orders={orders} loading={ordersLoading} error={ordersError} />
@@ -505,7 +532,7 @@ export default function AdminDashboardPage() {
           <ProductsTab shoes={shoes} loading={shoesLoading} error={shoesError} onSave={handleProductSave} onDelete={handleProductDelete} />
         </TabsContent>
         <TabsContent value="users">
-          <UsersTab users={users || []} loading={usersLoading} onAdminMade={() => setRefreshKey(k => k + 1)} />
+          <UsersTab initialUsers={adminUsers} loading={usersLoading} onAdminMade={() => setRefreshKey(k => k + 1)} />
         </TabsContent>
       </Tabs>
     </div>

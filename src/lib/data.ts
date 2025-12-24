@@ -1,6 +1,6 @@
 
 import type { Shoe } from './types';
-import { adminDb } from './firebase-admin';
+import { adminDb, adminAuth } from './firebase-admin';
 import { notFound } from 'next/navigation';
 
 /**
@@ -220,4 +220,26 @@ export async function getCategoryDetails(type: string, category: string) {
     return { title: 'All Products', description: 'Explore our full range of high-quality footwear.' };
 }
 
-    
+type AppUser = {
+  id: string;
+  email: string | null;
+  displayName: string | null;
+};
+
+export async function getAdminUsers(): Promise<AppUser[]> {
+    if (!adminAuth) {
+        console.log("Admin SDK not initialized. Returning empty array for getAdminUsers.");
+        return [];
+    }
+    try {
+        const userRecords = await adminAuth.listUsers();
+        return userRecords.users.map(user => ({
+            id: user.uid,
+            email: user.email || null,
+            displayName: user.displayName || null,
+        }));
+    } catch (error) {
+        console.error("Error fetching users:", (error as Error).message);
+        throw new Error("You do not have permission to list users.");
+    }
+}
