@@ -10,6 +10,7 @@ export type Shoe = {
     url: string;
     alt: string;
     hint: string;
+    path?: string; // Add storage path for deletion
   }[];
   sizes: number[];
   reviews: {

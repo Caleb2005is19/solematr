@@ -22,15 +22,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useStorage } from '@/firebase';
 import type { Shoe } from '@/lib/types';
 import { useState } from 'react';
-import { Loader2, Plus, Trash2 } from 'lucide-react';
+import { Loader2, Plus, Trash2, Camera, Upload, Image as ImageIcon } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { doc, setDoc, addDoc, collection } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { getPlaceholderImage } from '@/lib/placeholder-images';
+import { ImageUploader } from './image-uploader';
+import Image from 'next/image';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { deleteObject, ref } from 'firebase/storage';
 
 const formSchema = z.object({
   id: z.string().optional(),
@@ -46,7 +50,13 @@ const formSchema = z.object({
   sizes: z.array(z.number()).min(1, 'At least one size is required.'),
   gender: z.enum(['Men', 'Women', 'Unisex']),
   isOnSale: z.boolean().default(false),
-  // Images are handled separately for simplicity
+  images: z.array(z.object({
+    id: z.string(),
+    url: z.string(),
+    alt: z.string(),
+    hint: z.string(),
+    path: z.string().optional(),
+  })).min(1, 'At least one image is required.'),
 });
 
 type ProductFormValues = z.infer<typeof formSchema>;
@@ -60,10 +70,12 @@ const COMMON_SIZES = [7, 7.5, 8, 8.5, 9, 9.5, 10, 10.5, 11, 11.5, 12, 13];
 
 export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
   const firestore = useFirestore();
+  const storage = useStorage();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [customSizeInput, setCustomSizeInput] = useState('');
-  
+  const [isImageUploaderOpen, setIsImageUploaderOpen] = useState(false);
+
   const defaultValues: ProductFormValues = {
     id: shoe?.id,
     name: shoe?.name ?? '',
@@ -75,14 +87,17 @@ export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
     sizes: shoe?.sizes ?? [],
     gender: shoe?.gender ?? 'Unisex',
     isOnSale: shoe?.isOnSale ?? false,
+    images: shoe?.images ?? [],
   };
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues,
+    mode: 'onChange',
   });
   
   const currentSizes = form.watch('sizes');
+  const currentImages = form.watch('images');
 
   const handleCustomSizeAdd = () => {
     const size = parseFloat(customSizeInput);
@@ -98,23 +113,52 @@ export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
     form.setValue('sizes', newSizes, { shouldValidate: true });
   }
 
+  const handleImageUpload = (image: Shoe['images'][0]) => {
+    form.setValue('images', [...currentImages, image], { shouldValidate: true });
+    setIsImageUploaderOpen(false);
+  }
+
+  const handleImageDelete = async (imageToDelete: Shoe['images'][0]) => {
+    // If image has a path, it's in Firebase storage, so delete it from there.
+    if (imageToDelete.path) {
+        try {
+            const imageRef = ref(storage, imageToDelete.path);
+            await deleteObject(imageRef);
+            toast({
+              title: "Image Deleted",
+              description: "The image has been removed from storage.",
+            });
+        } catch (error: any) {
+            // If deletion fails, still allow removal from product, but notify user.
+            console.error("Failed to delete image from storage:", error);
+            toast({
+              variant: "destructive",
+              title: "Storage Deletion Failed",
+              description: "Could not remove the image from storage, but it will be removed from this product. You may need to delete it manually from the Firebase console.",
+            });
+        }
+    }
+    const updatedImages = currentImages.filter(img => img.id !== imageToDelete.id);
+    form.setValue('images', updatedImages, { shouldValidate: true });
+  }
+
   const onSubmit = async (data: ProductFormValues) => {
     if (!firestore) return;
     setIsSubmitting(true);
-
-    const newProductPlaceholder = getPlaceholderImage('placeholder-new-product');
-    const imageUrl = newProductPlaceholder
-      ? newProductPlaceholder.imageUrl.replace('{{SEED}}', data.name.replace(/\s+/g, '-'))
-      : '';
     
-    const imageHint = newProductPlaceholder ? newProductPlaceholder.imageHint : 'shoe photo';
-
-    const images = (shoe?.images && shoe.images.length > 0) ? shoe.images : [{
-        id: 'placeholder-new',
-        url: imageUrl,
-        alt: `A photo of ${data.name}`,
-        hint: imageHint,
-    }];
+    // Fallback image if none are provided (though form validation should prevent this)
+    if (data.images.length === 0) {
+        const newProductPlaceholder = getPlaceholderImage('placeholder-new-product');
+        const imageUrl = newProductPlaceholder
+        ? newProductPlaceholder.imageUrl.replace('{{SEED}}', data.name.replace(/\s+/g, '-'))
+        : '';
+        data.images.push({
+            id: 'placeholder-new',
+            url: imageUrl,
+            alt: `A photo of ${data.name}`,
+            hint: newProductPlaceholder?.imageHint || 'shoe photo',
+        });
+    }
 
 
     const shoeData: Omit<Shoe, 'id' | 'reviews'> = {
@@ -125,7 +169,7 @@ export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
         style: data.category, // simplified mapping
         price: data.price,
         description: data.description,
-        images,
+        images: data.images,
         sizes: data.sizes.sort((a,b) => a-b),
         gender: data.gender,
         isOnSale: data.isOnSale
@@ -309,85 +353,130 @@ export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
                             )}
                         />
                 </div>
-                <FormField
+                 <FormField
                     control={form.control}
-                    name="sizes"
-                    render={() => (
+                    name="images"
+                    render={({ field }) => (
                     <FormItem>
-                        <div className="mb-4">
-                            <FormLabel className="text-base">Sizes (US Men's)</FormLabel>
-                            <FormDescription>
-                                Select from common sizes or add a custom one.
-                            </FormDescription>
-                        </div>
-                        <div className="grid grid-cols-4 gap-2 rounded-md border p-4">
-                            {COMMON_SIZES.map((size) => (
-                                <FormField
-                                key={size}
-                                control={form.control}
-                                name="sizes"
-                                render={({ field }) => {
-                                    return (
-                                    <FormItem
-                                        key={size}
-                                        className="flex flex-row items-start space-x-3 space-y-0"
-                                    >
-                                        <FormControl>
-                                        <Checkbox
-                                            checked={field.value?.includes(size)}
-                                            onCheckedChange={(checked) => {
-                                            return checked
-                                                ? field.onChange([...field.value, size].sort((a,b) => a-b))
-                                                : field.onChange(
-                                                    field.value?.filter(
-                                                        (value) => value !== size
-                                                    )
-                                                )
-                                            }}
-                                        />
-                                        </FormControl>
-                                        <FormLabel className="font-normal">
-                                        {size}
-                                        </FormLabel>
-                                    </FormItem>
-                                    )
-                                }}
-                                />
-                            ))}
-                        </div>
-
-                         <div className="mt-4">
-                            <FormLabel>Custom Sizes</FormLabel>
-                            <div className="flex items-center gap-2 mt-2">
-                                <Input 
-                                    type="number" 
-                                    step="0.5" 
-                                    placeholder="e.g., 12.5" 
-                                    value={customSizeInput}
-                                    onChange={(e) => setCustomSizeInput(e.target.value)}
-                                    className="w-40"
-                                />
-                                <Button type="button" variant="outline" size="sm" onClick={handleCustomSizeAdd}>
-                                    <Plus className="h-4 w-4 mr-1"/> Add
-                                </Button>
-                            </div>
-                            <div className="mt-2 flex flex-wrap gap-2">
-                                {customSizes.map(size => (
-                                    <div key={size} className="flex items-center gap-1 bg-secondary text-secondary-foreground rounded-full px-3 py-1 text-sm">
-                                        {size}
-                                        <Button type="button" variant="ghost" size="icon" className="h-5 w-5 rounded-full" onClick={() => handleCustomSizeRemove(size)}>
-                                            <Trash2 className="h-3 w-3" />
-                                        </Button>
+                        <FormLabel className="text-base">Product Images</FormLabel>
+                        <FormDescription>
+                            Upload at least one image. The first image will be the main display image.
+                        </FormDescription>
+                         <div className="p-4 border rounded-lg space-y-4">
+                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
+                                {currentImages.map((image, index) => (
+                                    <div key={image.id} className="relative group aspect-square">
+                                        <Image src={image.url} alt={image.alt} fill sizes="100px" className="object-cover rounded-md"/>
+                                        <div className="absolute top-1 right-1">
+                                            <Button type="button" variant="destructive" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => handleImageDelete(image)}>
+                                                <Trash2 className="h-4 w-4"/>
+                                            </Button>
+                                        </div>
+                                         {index === 0 && (
+                                            <div className="absolute bottom-0 w-full bg-black/50 text-white text-xs text-center py-0.5 rounded-b-md">Main</div>
+                                        )}
                                     </div>
                                 ))}
+                                <Dialog open={isImageUploaderOpen} onOpenChange={setIsImageUploaderOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button type="button" variant="outline" className="aspect-square w-full h-full flex flex-col items-center justify-center">
+                                            <Plus className="h-6 w-6"/>
+                                            <span>Add Image</span>
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                        <DialogHeader>
+                                            <DialogTitle>Add a New Image</DialogTitle>
+                                        </DialogHeader>
+                                        <ImageUploader onImageUploaded={handleImageUpload} />
+                                    </DialogContent>
+                                </Dialog>
                             </div>
-                        </div>
+                         </div>
                         <FormMessage />
                     </FormItem>
                     )}
                 />
             </div>
         </div>
+
+        <FormField
+            control={form.control}
+            name="sizes"
+            render={() => (
+            <FormItem>
+                <div className="mb-4">
+                    <FormLabel className="text-base">Sizes (US Men's)</FormLabel>
+                    <FormDescription>
+                        Select from common sizes or add a custom one.
+                    </FormDescription>
+                </div>
+                <div className="grid grid-cols-4 gap-2 rounded-md border p-4">
+                    {COMMON_SIZES.map((size) => (
+                        <FormField
+                        key={size}
+                        control={form.control}
+                        name="sizes"
+                        render={({ field }) => {
+                            return (
+                            <FormItem
+                                key={size}
+                                className="flex flex-row items-start space-x-3 space-y-0"
+                            >
+                                <FormControl>
+                                <Checkbox
+                                    checked={field.value?.includes(size)}
+                                    onCheckedChange={(checked) => {
+                                    return checked
+                                        ? field.onChange([...field.value, size].sort((a,b) => a-b))
+                                        : field.onChange(
+                                            field.value?.filter(
+                                                (value) => value !== size
+                                            )
+                                        )
+                                    }}
+                                />
+                                </FormControl>
+                                <FormLabel className="font-normal">
+                                {size}
+                                </FormLabel>
+                            </FormItem>
+                            )
+                        }}
+                        />
+                    ))}
+                </div>
+
+                    <div className="mt-4">
+                    <FormLabel>Custom Sizes</FormLabel>
+                    <div className="flex items-center gap-2 mt-2">
+                        <Input 
+                            type="number" 
+                            step="0.5" 
+                            placeholder="e.g., 12.5" 
+                            value={customSizeInput}
+                            onChange={(e) => setCustomSizeInput(e.target.value)}
+                            className="w-40"
+                        />
+                        <Button type="button" variant="outline" size="sm" onClick={handleCustomSizeAdd}>
+                            <Plus className="h-4 w-4 mr-1"/> Add
+                        </Button>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                        {customSizes.map(size => (
+                            <div key={size} className="flex items-center gap-1 bg-secondary text-secondary-foreground rounded-full px-3 py-1 text-sm">
+                                {size}
+                                <Button type="button" variant="ghost" size="icon" className="h-5 w-5 rounded-full" onClick={() => handleCustomSizeRemove(size)}>
+                                    <Trash2 className="h-3 w-3" />
+                                </Button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                <FormMessage />
+            </FormItem>
+            )}
+        />
         
         <div className="flex justify-end gap-4 pt-4">
             <Button type="button" variant="outline" onClick={() => onFormSubmit(false)}>Cancel</Button>

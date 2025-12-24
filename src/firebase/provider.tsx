@@ -6,6 +6,7 @@ import { FirebaseApp } from 'firebase/app';
 import { Firestore } from 'firebase/firestore';
 import { Functions } from 'firebase/functions';
 import { Auth, User, onAuthStateChanged } from 'firebase/auth';
+import { FirebaseStorage } from 'firebase/storage';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener'
 
 interface FirebaseProviderProps {
@@ -14,6 +15,7 @@ interface FirebaseProviderProps {
   firestore: Firestore;
   auth: Auth;
   functions: Functions;
+  storage: FirebaseStorage;
 }
 
 export interface FirebaseContextState {
@@ -21,6 +23,7 @@ export interface FirebaseContextState {
   firestore: Firestore;
   auth: Auth; 
   functions: Functions;
+  storage: FirebaseStorage;
 }
 
 export interface UserHookResult {
@@ -37,6 +40,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   firestore,
   auth,
   functions,
+  storage
 }) => {
   
   const contextValue = useMemo((): FirebaseContextState => {
@@ -45,8 +49,9 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       firestore,
       auth,
       functions,
+      storage
     };
-  }, [firebaseApp, firestore, auth, functions]);
+  }, [firebaseApp, firestore, auth, functions, storage]);
 
   return (
     <FirebaseContext.Provider value={contextValue}>
@@ -92,6 +97,13 @@ export const useFirebaseApp = (): FirebaseApp => {
   const { firebaseApp } = useFirebase();
   if (!firebaseApp) throw new Error("FirebaseApp not available");
   return firebaseApp;
+};
+
+/** Hook to access Firebase Storage instance. */
+export const useStorage = (): FirebaseStorage => {
+    const { storage } = useFirebase();
+    if (!storage) throw new Error("Storage service not available");
+    return storage;
 };
 
 type MemoFirebase <T> = T & {__memo?: boolean};
