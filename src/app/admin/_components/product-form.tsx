@@ -147,12 +147,12 @@ export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
     setIsSubmitting(true);
     
     // Fallback image if none are provided (though form validation should prevent this)
-    if (data.images.length === 0) {
+    if ((data.images || []).length === 0) {
         const newProductPlaceholder = getPlaceholderImage('placeholder-new-product');
         const imageUrl = newProductPlaceholder
         ? newProductPlaceholder.imageUrl.replace('{{SEED}}', data.name.replace(/\s+/g, '-'))
         : '';
-        data.images.push({
+        (data.images || []).push({
             id: 'placeholder-new',
             url: imageUrl,
             alt: `A photo of ${data.name}`,
@@ -170,8 +170,15 @@ export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
         style: data.category, // simplified mapping
         price: data.price,
         description: data.description,
-        images: data.images.map(({id, url, alt, hint, path}) => ({id, url, alt, hint, path})), // ensure no extra properties
-        sizes: data.sizes.sort((a,b) => a-b),
+        images: (data.images || []).map(img => {
+          const {id, url, alt, hint, path} = img;
+          const imageObject: Shoe['images'][0] = {id, url, alt, hint};
+          if (path) {
+            imageObject.path = path;
+          }
+          return imageObject;
+        }),
+        sizes: (data.sizes || []).sort((a,b) => a-b),
         gender: data.gender,
         isOnSale: data.isOnSale
     };
