@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/select';
 import { useFirestore, useStorage } from '@/firebase';
 import type { Shoe } from '@/lib/types';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Loader2, Plus, Trash2, Camera, Upload, Image as ImageIcon } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -42,10 +42,7 @@ const formSchema = z.object({
   brand: z.string().min(2, 'Brand is required.'),
   type: z.enum(['Sneakers', 'Shoes']),
   category: z.string().min(2, 'Category is required.'),
-  price: z.preprocess(
-    (a) => parseFloat(z.string().parse(a)),
-    z.number().positive('Price must be positive.')
-  ),
+  price: z.coerce.number().positive('Price must be a positive number.'),
   description: z.string().min(10, 'Description must be at least 10 characters.'),
   sizes: z.array(z.number()).min(1, 'At least one size is required.'),
   gender: z.enum(['Men', 'Women', 'Unisex']),
@@ -76,25 +73,27 @@ export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
   const [customSizeInput, setCustomSizeInput] = useState('');
   const [isImageUploaderOpen, setIsImageUploaderOpen] = useState(false);
 
-  const defaultValues: ProductFormValues = {
-    id: shoe?.id,
-    name: shoe?.name ?? '',
-    brand: shoe?.brand ?? '',
-    type: shoe?.type ?? 'Sneakers',
-    category: shoe?.category ?? '',
-    price: shoe?.price ?? 0,
-    description: shoe?.description ?? '',
-    sizes: shoe?.sizes ?? [],
-    gender: shoe?.gender ?? 'Unisex',
-    isOnSale: shoe?.isOnSale ?? false,
-    images: shoe?.images ?? [],
-  };
-
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues,
     mode: 'onChange',
   });
+
+  useEffect(() => {
+    const defaultValues: ProductFormValues = {
+        id: shoe?.id,
+        name: shoe?.name ?? '',
+        brand: shoe?.brand ?? '',
+        type: shoe?.type ?? 'Sneakers',
+        category: shoe?.category ?? '',
+        price: shoe?.price ?? 0,
+        description: shoe?.description ?? '',
+        sizes: shoe?.sizes ?? [],
+        gender: shoe?.gender ?? 'Unisex',
+        isOnSale: shoe?.isOnSale ?? false,
+        images: shoe?.images ?? [],
+    };
+    form.reset(defaultValues);
+  }, [shoe, form]);
   
   const currentSizes = form.watch('sizes');
   const currentImages = form.watch('images');
@@ -122,6 +121,7 @@ export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
     // If image has a path, it's in Firebase storage, so delete it from there.
     if (imageToDelete.path) {
         try {
+            if (!storage) throw new Error("Storage not available");
             const imageRef = ref(storage, imageToDelete.path);
             await deleteObject(imageRef);
             toast({
@@ -157,6 +157,7 @@ export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
             url: imageUrl,
             alt: `A photo of ${data.name}`,
             hint: newProductPlaceholder?.imageHint || 'shoe photo',
+            path: undefined
         });
     }
 
@@ -169,7 +170,7 @@ export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
         style: data.category, // simplified mapping
         price: data.price,
         description: data.description,
-        images: data.images,
+        images: data.images.map(({id, url, alt, hint, path}) => ({id, url, alt, hint, path})), // ensure no extra properties
         sizes: data.sizes.sort((a,b) => a-b),
         gender: data.gender,
         isOnSale: data.isOnSale
@@ -324,7 +325,7 @@ export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
                             <FormItem>
                             <FormLabel>Price (KSH)</FormLabel>
                             <FormControl>
-                                <Input type="number" placeholder="120.00" {...field} value={field.value ?? ""} />
+                                <Input type="number" placeholder="120.00" {...field} onChange={e => field.onChange(e.target.valueAsNumber)} value={field.value || ''} />
                             </FormControl>
                             <FormMessage />
                             </FormItem>
