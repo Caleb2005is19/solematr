@@ -100,20 +100,20 @@ export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
 
   const handleCustomSizeAdd = () => {
     const size = parseFloat(customSizeInput);
-    if (!isNaN(size) && size > 0 && !currentSizes.includes(size)) {
-        const newSizes = [...currentSizes, size].sort((a,b) => a-b);
+    if (!isNaN(size) && size > 0 && !(currentSizes || []).includes(size)) {
+        const newSizes = [...(currentSizes || []), size].sort((a,b) => a-b);
         form.setValue('sizes', newSizes, { shouldValidate: true });
         setCustomSizeInput('');
     }
   };
 
   const handleCustomSizeRemove = (size: number) => {
-    const newSizes = currentSizes.filter(s => s !== size);
+    const newSizes = (currentSizes || []).filter(s => s !== size);
     form.setValue('sizes', newSizes, { shouldValidate: true });
   }
 
   const handleImageUpload = (image: Shoe['images'][0]) => {
-    form.setValue('images', [...currentImages, image], { shouldValidate: true });
+    form.setValue('images', [...(currentImages || []), image], { shouldValidate: true });
     setIsImageUploaderOpen(false);
   }
 
@@ -138,7 +138,7 @@ export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
             });
         }
     }
-    const updatedImages = currentImages.filter(img => img.id !== imageToDelete.id);
+    const updatedImages = (currentImages || []).filter(img => img.id !== imageToDelete.id);
     form.setValue('images', updatedImages, { shouldValidate: true });
   }
 
@@ -365,7 +365,7 @@ export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
                         </FormDescription>
                          <div className="p-4 border rounded-lg space-y-4">
                             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
-                                {currentImages.map((image, index) => (
+                                {(currentImages || []).map((image, index) => (
                                     <div key={image.id} className="relative group aspect-square">
                                         <Image src={image.url} alt={image.alt} fill sizes="100px" className="object-cover rounded-md"/>
                                         <div className="absolute top-1 right-1">
@@ -426,12 +426,12 @@ export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
                             >
                                 <FormControl>
                                 <Checkbox
-                                    checked={field.value?.includes(size)}
+                                    checked={(field.value || []).includes(size)}
                                     onCheckedChange={(checked) => {
                                     return checked
                                         ? field.onChange([...(field.value || []), size].sort((a,b) => a-b))
                                         : field.onChange(
-                                            field.value?.filter(
+                                            (field.value || []).filter(
                                                 (value) => value !== size
                                             )
                                         )
