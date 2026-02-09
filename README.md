@@ -28,27 +28,43 @@ These are for the Firebase SDK that runs in the user's browser.
 2.  Select your project.
 3.  Click the **Gear icon** next to "Project Overview" and go to **Project settings**.
 4.  In the "General" tab, scroll down to the "Your apps" section.
-5.  Click on your web app.
-6.  Select **"Config"** to view the `firebaseConfig` object.
-7.  Copy the values into the corresponding `NEXT_PUBLIC_...` fields in your `.env.local` file. The `storageBucket` value can be found in your project's **Storage** section on the Firebase Console.
+5.  If you haven't created a web app yet, click the **</>** icon to add one. Follow the steps, giving it a nickname.
+6.  Once you have a web app, select it.
+7.  Choose **"Config"** to view the `firebaseConfig` object. It will look like this:
+    ```javascript
+    const firebaseConfig = {
+      apiKey: "AIza...",
+      authDomain: "your-project.firebaseapp.com",
+      projectId: "your-project-id",
+      storageBucket: "your-project.appspot.com",
+      messagingSenderId: "1234567890",
+      appId: "1:12345..."
+    };
+    ```
+8.  Open your `.env.local` file and copy the values from the `firebaseConfig` object into the corresponding `NEXT_PUBLIC_...` fields. For example, the `apiKey` value goes into `NEXT_PUBLIC_FIREBASE_API_KEY`.
 
 #### B. Server-Side Admin Credentials (Secret)
 
-These are for the Firebase Admin SDK, which runs on the server to perform privileged operations. This requires a **single, base64-encoded** environment variable.
+These are for the Firebase Admin SDK, which runs on the server to perform privileged operations like reading all user data. This requires a **single, base64-encoded** environment variable.
 
 1.  In your Firebase **Project settings**, go to the **"Service accounts"** tab.
 2.  Click the **"Generate new private key"** button. A warning will appear; confirm by clicking **"Generate key"**.
-3.  A **JSON file** will be downloaded to your computer (e.g., `my-project-firebase-adminsdk.json`).
+3.  A **JSON file** will be downloaded to your computer (e.g., `my-project-firebase-adminsdk.json`). **Keep this file secure and do not commit it to Git.**
 
-4.  **Encode the entire file contents to Base64.** You can do this easily online or with a command-line tool.
-    *   **Online Tool (Easy):** Go to [base64encode.org](https://www.base64encode.org/), choose "Encode files", upload your downloaded JSON file, and copy the resulting encoded string.
+4.  **CRITICAL STEP: Encode the entire JSON file to Base64.** This is a common point of error. The result should be a single, long string of text.
+    *   **Online Tool (Easy):** Go to a site like [base64encode.org](https://www.base64encode.org/), choose "Encode files", upload your downloaded JSON file, and copy the resulting encoded string.
     *   **Command Line (macOS/Linux):**
         ```bash
         # Replace the path with the actual path to your key file
         base64 -i /path/to/your/downloaded-key-file.json
         ```
+    *   **Command Line (Windows PowerShell):**
+        ```powershell
+        # Replace with the actual path and pipes the output to your clipboard
+        [Convert]::ToBase64String([IO.File]::ReadAllBytes("C:\\path\\to\\your\\key.json")) | Set-Clipboard
+        ```
 
-5.  **Set the Environment Variable**: Copy the single, long, encoded string and paste it as the value for `FIREBASE_ADMIN_SERVICE_ACCOUNT_BASE64` in your `.env.local` file. It should look like this:
+5.  **Set the Environment Variable**: Open your `.env.local` file. Paste the single, long, encoded string as the value for `FIREBASE_ADMIN_SERVICE_ACCOUNT_BASE64`. It should look like this:
     ```
     FIREBASE_ADMIN_SERVICE_ACCOUNT_BASE64=ZXlKb2RI...your-very-long-encoded-string...JrZCI6IiJ9
     ```
@@ -73,4 +89,4 @@ For your deployed application on Vercel to work, you must also provide these env
 3.  Add each of the `NEXT_PUBLIC_` variables from your `.env.local` file.
 4.  Add the **single** `FIREBASE_ADMIN_SERVICE_ACCOUNT_BASE64` variable, pasting the same long, base64-encoded string you used locally.
 5.  Ensure all variables are enabled for the **Production** environment (and Preview, if desired).
-6.  **Redeploy** your application to apply the changes. The new build will now have access to the credentials and will be able to fetch data from Firestore on the server.
+6.  **Redeploy** your application. The new build will now have access to the credentials and will be able to connect to Firebase.

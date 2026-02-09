@@ -25,12 +25,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export async function generateStaticParams() {
-  const allShoes = await getShoes({ type: 'Sneakers' });
-  const categories = [...new Set(allShoes.map(shoe => shoe.category.toLowerCase()))];
-  return categories.map((category) => ({ category }));
-}
-
 export default async function SneakerCategoryPage({ params, searchParams }: Props) {
   const { category } = params;
   

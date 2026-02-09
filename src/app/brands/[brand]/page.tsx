@@ -19,13 +19,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export async function generateStaticParams() {
-  const brands = await getAllBrands();
-  return brands.map((brand) => ({
-    brand: brand.toLowerCase(),
-  }));
-}
-
 export default async function BrandPage({ params, searchParams }: Props) {
   const { brand } = params;
   

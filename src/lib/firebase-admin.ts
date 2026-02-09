@@ -2,26 +2,20 @@
 import admin from 'firebase-admin';
 import type { ServiceAccount } from 'firebase-admin';
 
-let adminApp: admin.App | undefined;
+// Use a unique name for the admin app instance to avoid conflicts.
+const ADMIN_APP_NAME = 'solemate-admin-sdk';
 
 /**
- * Initializes the Firebase Admin app with a lazy-loading approach.
- * The app is only initialized on its first use, ensuring that environment
- * variables are available.
+ * Initializes the Firebase Admin app with a lazy-loading, named-instance approach.
+ * This is the most robust method for serverless environments like Vercel.
+ * It ensures that the app is initialized only once and with the correct credentials.
  * @returns {admin.App} The initialized Firebase Admin app.
  */
 function initializeAdminApp(): admin.App {
-  // If the app is already initialized, return it.
-  if (adminApp) {
-    return adminApp;
-  }
-  
-  // If there's already an app initialized (e.g., in a different context), use it.
-  if (admin.apps.length > 0) {
-    adminApp = admin.app();
-    if (adminApp) {
-        return adminApp;
-    }
+  // Check if the named app is already initialized. If so, return it.
+  const existingApp = admin.apps.find(app => app?.name === ADMIN_APP_NAME);
+  if (existingApp) {
+    return existingApp;
   }
 
   const { FIREBASE_ADMIN_SERVICE_ACCOUNT_BASE64 } = process.env;
@@ -36,10 +30,12 @@ function initializeAdminApp(): admin.App {
     const serviceAccountJson = Buffer.from(FIREBASE_ADMIN_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf-8');
     const serviceAccount = JSON.parse(serviceAccountJson) as ServiceAccount;
 
-    adminApp = admin.initializeApp({
+    // Initialize the app with a unique name.
+    const newApp = admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
-    });
-    return adminApp;
+    }, ADMIN_APP_NAME);
+
+    return newApp;
 
   } catch (e: unknown) {
     let reason = 'The service account JSON might be malformed or invalid.';

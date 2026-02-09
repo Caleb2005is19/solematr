@@ -49,14 +49,6 @@ export async function generateMetadata(
   }
 }
 
-export async function generateStaticParams() {
-  const shoes = await getShoes();
- 
-  return shoes.map((shoe) => ({
-    slug: shoe.id,
-  }));
-}
-
 export default async function ProductDetailPage({ params }: { params: { slug: string } }) {
   const slug = params.slug;
   const shoe = await getShoeBySlug(slug);
@@ -181,5 +173,3 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
     </>
   );
 }
-
-    
