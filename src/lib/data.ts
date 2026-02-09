@@ -3,15 +3,21 @@ import type { Shoe } from './types';
 import { adminDb, adminAuth } from './firebase-admin';
 import { notFound } from 'next/navigation';
 
+const DB_ERROR_MESSAGE =
+  'Firebase Admin SDK is not initialized. ' +
+  'Please ensure the FIREBASE_ADMIN_SERVICE_ACCOUNT_BASE64 environment variable is set correctly in your deployment environment. ' +
+  'See README.md for setup instructions.';
+
 /**
  * Fetches shoes from the Firestore 'shoes' collection.
  * This function is for SERVER-SIDE use only.
  */
 export async function getShoes(filters?: { type?: string; category?: string; brand?: string; style?: string; size?: string; gender?: string; onSale?: boolean }): Promise<Shoe[]> {
   if (!adminDb) {
-    console.log("Admin SDK not initialized. Returning empty array for getShoes.");
-    return [];
+    // This is a critical failure at build time.
+    throw new Error(DB_ERROR_MESSAGE);
   }
+
   try {
     let query: FirebaseFirestore.Query<FirebaseFirestore.DocumentData> = adminDb.collection('shoes');
 
@@ -58,9 +64,9 @@ export async function getShoes(filters?: { type?: string; category?: string; bra
     return shoes;
   } catch (error) {
     console.error("Error fetching shoes from Firestore:", (error as Error).message);
-    // In a production app, you might want to handle this more gracefully.
-    // For now, we return an empty array to prevent the page from crashing.
-    return [];
+    // Re-throwing the error is crucial for build-time operations like generateStaticParams.
+    // It makes the build fail, preventing a deployment of a broken site.
+    throw new Error(`Failed to fetch shoes from Firestore. Reason: ${(error as Error).message}`);
   }
 }
 
@@ -71,7 +77,7 @@ export async function getShoes(filters?: { type?: string; category?: string; bra
 export async function getShoeBySlug(slug: string): Promise<Shoe | null> {
    if (!adminDb) {
     console.error("Admin SDK not initialized. Cannot fetch shoe.");
-    notFound();
+    throw new Error(DB_ERROR_MESSAGE);
   }
   try {
     const docRef = adminDb.collection('shoes').doc(slug);
@@ -106,8 +112,7 @@ export async function getShoeById(id: string): Promise<Shoe | null> {
 
 async function getDistinctFieldValues(field: string): Promise<string[]> {
     if (!adminDb) {
-        console.log(`Admin SDK not initialized. Returning empty array for getDistinctFieldValues(${field}).`);
-        return [];
+        throw new Error(DB_ERROR_MESSAGE);
     }
     try {
         const snapshot = await adminDb.collection('shoes').select(field).get();
@@ -123,7 +128,7 @@ async function getDistinctFieldValues(field: string): Promise<string[]> {
         return Array.from(valueSet);
     } catch (error) {
         console.error(`Error fetching distinct values for field ${field}:`, error);
-        return [];
+        throw new Error(`Failed to fetch distinct values for field ${field}. Reason: ${(error as Error).message}`);
     }
 }
 
@@ -141,8 +146,7 @@ export async function getAllGenders(): Promise<string[]> {
 
 export async function getAllSizes(): Promise<number[]> {
     if (!adminDb) {
-        console.log("Admin SDK not initialized. Returning empty array for getAllSizes.");
-        return [];
+        throw new Error(DB_ERROR_MESSAGE);
     }
     try {
         const snapshot = await adminDb.collection('shoes').select('sizes').get();
@@ -158,7 +162,7 @@ export async function getAllSizes(): Promise<number[]> {
         return Array.from(valueSet).sort((a,b) => a - b);
     } catch (error) {
         console.error(`Error fetching distinct sizes:`, error);
-        return [];
+        throw new Error(`Failed to fetch distinct sizes. Reason: ${(error as Error).message}`);
     }
 }
 
