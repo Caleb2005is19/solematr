@@ -35,7 +35,8 @@ export function ImageUploader({ onImageUploaded }: ImageUploaderProps) {
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
 
   const getCameraPermission = useCallback(async () => {
-    // Clean up existing streams before getting a new one
+    // Reset state before requesting to show loading indicator
+    setHasCameraPermission(null);
     if (videoRef.current && videoRef.current.srcObject) {
         const stream = videoRef.current.srcObject as MediaStream;
         stream.getTracks().forEach(track => track.stop());
@@ -170,8 +171,12 @@ export function ImageUploader({ onImageUploaded }: ImageUploaderProps) {
                   <AlertTriangle className="h-4 w-4" />
                   <AlertTitle>Camera Access Required</AlertTitle>
                   <AlertDescription>
-                    Please allow camera access in your browser settings to use this feature.
+                    Please allow camera access in your browser to use this feature.
                   </AlertDescription>
+                  <Button variant="secondary" className="mt-3" onClick={getCameraPermission}>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Try Again
+                  </Button>
                 </Alert>
             )}
             <div className="relative aspect-video bg-secondary rounded-md overflow-hidden flex items-center justify-center">
