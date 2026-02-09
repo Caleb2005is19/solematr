@@ -207,7 +207,7 @@ export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
     }
   };
 
-  const customSizes = currentSizes.filter(s => !COMMON_SIZES.includes(s));
+  const customSizes = (currentSizes || []).filter(s => !COMMON_SIZES.includes(s));
 
   return (
     <Form {...form}>
@@ -429,7 +429,7 @@ export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
                                     checked={field.value?.includes(size)}
                                     onCheckedChange={(checked) => {
                                     return checked
-                                        ? field.onChange([...field.value, size].sort((a,b) => a-b))
+                                        ? field.onChange([...(field.value || []), size].sort((a,b) => a-b))
                                         : field.onChange(
                                             field.value?.filter(
                                                 (value) => value !== size
