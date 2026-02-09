@@ -1,12 +1,13 @@
 'use server';
 
-import { adminDb } from "@/lib/firebase-admin";
+import { getAdminDb } from "@/lib/firebase-admin";
 
 /**
  * Server Action to securely fetch the list of all orders.
  * This action runs only on the server, using the 'firebase-admin' SDK.
  */
 export async function getAdminOrders() {
+    const adminDb = getAdminDb();
     if (!adminDb) {
         return { error: "Admin SDK not initialized. Cannot fetch orders." };
     }

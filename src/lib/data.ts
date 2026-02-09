@@ -1,24 +1,18 @@
 
 import type { Shoe } from './types';
-import { adminDb, adminAuth } from './firebase-admin';
+import { getAdminDb, getAdminAuth } from './firebase-admin';
 import { notFound } from 'next/navigation';
 
 const DB_ERROR_MESSAGE =
-  'Firebase Admin SDK is not initialized. ' +
-  'Please ensure the FIREBASE_ADMIN_SERVICE_ACCOUNT_BASE64 environment variable is set correctly in your deployment environment. ' +
-  'See README.md for setup instructions.';
+  'CRITICAL: Firebase Admin SDK is not initialized. This typically means the `FIREBASE_ADMIN_SERVICE_ACCOUNT_BASE64` environment variable is missing or invalid. The application cannot fetch server-side data. See README.md for setup instructions.';
 
 /**
  * Fetches shoes from the Firestore 'shoes' collection.
  * This function is for SERVER-SIDE use only.
  */
 export async function getShoes(filters?: { type?: string; category?: string; brand?: string; style?: string; size?: string; gender?: string; onSale?: boolean }): Promise<Shoe[]> {
-  if (!adminDb) {
-    // This is a critical failure at build time.
-    throw new Error(DB_ERROR_MESSAGE);
-  }
-
   try {
+    const adminDb = getAdminDb();
     let query: FirebaseFirestore.Query<FirebaseFirestore.DocumentData> = adminDb.collection('shoes');
 
     if (filters) {
@@ -55,7 +49,6 @@ export async function getShoes(filters?: { type?: string; category?: string; bra
       const data = doc.data();
       return {
         id: doc.id,
-        // Ensure reviews is always an array, even if it's missing in Firestore
         reviews: data.reviews || [],
         ...data
       } as Shoe;
@@ -64,9 +57,7 @@ export async function getShoes(filters?: { type?: string; category?: string; bra
     return shoes;
   } catch (error) {
     console.error("Error fetching shoes from Firestore:", (error as Error).message);
-    // Re-throwing the error is crucial for build-time operations like generateStaticParams.
-    // It makes the build fail, preventing a deployment of a broken site.
-    throw new Error(`Failed to fetch shoes from Firestore. Reason: ${(error as Error).message}`);
+    throw new Error(`Failed to fetch shoes from Firestore. The database might be misconfigured or the Admin SDK credentials may be invalid. Reason: ${(error as Error).message}`);
   }
 }
 
@@ -75,11 +66,8 @@ export async function getShoes(filters?: { type?: string; category?: string; bra
  * This function is for SERVER-SIDE use only.
  */
 export async function getShoeBySlug(slug: string): Promise<Shoe | null> {
-   if (!adminDb) {
-    console.error("Admin SDK not initialized. Cannot fetch shoe.");
-    throw new Error(DB_ERROR_MESSAGE);
-  }
   try {
+    const adminDb = getAdminDb();
     const docRef = adminDb.collection('shoes').doc(slug);
     const docSnap = await docRef.get();
 
@@ -90,7 +78,7 @@ export async function getShoeBySlug(slug: string): Promise<Shoe | null> {
     const data = docSnap.data();
     return {
         id: docSnap.id,
-        reviews: data?.reviews || [], // Ensure reviews is always an array
+        reviews: data?.reviews || [],
         ...data
     } as Shoe;
   } catch (error) {
@@ -105,16 +93,13 @@ export async function getShoeBySlug(slug: string): Promise<Shoe | null> {
  */
 export async function getShoeById(id: string): Promise<Shoe | null> {
     const shoe = await getShoeBySlug(id);
-    // getShoeBySlug will call notFound() internally if shoe doesn't exist.
     return shoe;
 }
 
 
 async function getDistinctFieldValues(field: string): Promise<string[]> {
-    if (!adminDb) {
-        throw new Error(DB_ERROR_MESSAGE);
-    }
     try {
+        const adminDb = getAdminDb();
         const snapshot = await adminDb.collection('shoes').select(field).get();
         if (snapshot.empty) return [];
         
@@ -145,10 +130,8 @@ export async function getAllGenders(): Promise<string[]> {
 }
 
 export async function getAllSizes(): Promise<number[]> {
-    if (!adminDb) {
-        throw new Error(DB_ERROR_MESSAGE);
-    }
     try {
+        const adminDb = getAdminDb();
         const snapshot = await adminDb.collection('shoes').select('sizes').get();
         if (snapshot.empty) return [];
         
@@ -228,11 +211,8 @@ type AppUser = {
 };
 
 export async function getAdminUsers(): Promise<AppUser[]> {
-    if (!adminAuth) {
-        console.error("Admin Auth SDK not initialized. Cannot list users.");
-        throw new Error("You do not have permission to list users.");
-    }
     try {
+        const adminAuth = getAdminAuth();
         const userRecords = await adminAuth.listUsers();
         return userRecords.users.map(user => ({
             id: user.uid,
@@ -241,6 +221,6 @@ export async function getAdminUsers(): Promise<AppUser[]> {
         }));
     } catch (error) {
         console.error("Error fetching users:", (error as Error).message);
-        throw new Error("You do not have permission to list users.");
+        throw new Error("You do not have permission to list users or the Admin SDK is not configured correctly.");
     }
 }

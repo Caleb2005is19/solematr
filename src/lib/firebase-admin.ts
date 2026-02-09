@@ -2,69 +2,68 @@
 import admin from 'firebase-admin';
 import type { ServiceAccount } from 'firebase-admin';
 
-// This function is memoized, so it only runs once.
 let adminApp: admin.App | undefined;
 
-function initializeAdminApp(): admin.App | undefined {
-  // Return if memoized
+/**
+ * Initializes the Firebase Admin app with a lazy-loading approach.
+ * The app is only initialized on its first use, ensuring that environment
+ * variables are available.
+ * @returns {admin.App} The initialized Firebase Admin app.
+ */
+function initializeAdminApp(): admin.App {
+  // If the app is already initialized, return it.
   if (adminApp) {
     return adminApp;
   }
   
-  // Return if already initialized by another means
+  // If there's already an app initialized (e.g., in a different context), use it.
   if (admin.apps.length > 0) {
     adminApp = admin.app();
-    return adminApp;
+    if (adminApp) {
+        return adminApp;
+    }
   }
 
   const { FIREBASE_ADMIN_SERVICE_ACCOUNT_BASE64 } = process.env;
 
-  try {
-    if (!FIREBASE_ADMIN_SERVICE_ACCOUNT_BASE64) {
-      // Don't log a full warning in production/build environments, just return.
-      if (process.env.NODE_ENV === 'development') {
-        console.warn(
-          'WARNING: Firebase Admin credentials are not set in the `FIREBASE_ADMIN_SERVICE_ACCOUNT_BASE64` environment variable. ' +
-          'Server-side data fetching will be disabled. ' +
-          'See README.md for setup instructions.'
-        );
-      }
-      return undefined;
-    }
+  if (!FIREBASE_ADMIN_SERVICE_ACCOUNT_BASE64) {
+    throw new Error(
+      'CRITICAL: Firebase Admin credentials are not set. The `FIREBASE_ADMIN_SERVICE_ACCOUNT_BASE64` environment variable is missing. Server-side features will not work. See README.md for setup instructions.'
+    );
+  }
 
-    // Decode the base64 string to get the JSON service account object
+  try {
     const serviceAccountJson = Buffer.from(FIREBASE_ADMIN_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf-8');
     const serviceAccount = JSON.parse(serviceAccountJson) as ServiceAccount;
 
-    // Memoize the initialized app
     adminApp = admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
     });
     return adminApp;
 
   } catch (e: unknown) {
-    let errorMessage = 'Failed to initialize Firebase Admin SDK.';
+    let reason = 'The service account JSON might be malformed or invalid.';
     if (e instanceof Error) {
-      errorMessage = `${errorMessage} Reason: ${e.message}`;
+      reason = e.message;
     }
-    console.error(errorMessage);
-    return undefined;
+    throw new Error(
+      `CRITICAL: Failed to initialize Firebase Admin SDK. Reason: ${reason}. Please check your FIREBASE_ADMIN_SERVICE_ACCOUNT_BASE64 environment variable.`
+    );
   }
 }
 
-
-// Export functions that attempt to initialize and then return the services
-export const getAdminDb = (): FirebaseFirestore.Firestore | null => {
-  const app = initializeAdminApp();
-  return app ? admin.firestore(app) : null;
+/**
+ * Gets the Firestore database instance from the lazily-initialized admin app.
+ * @returns {FirebaseFirestore.Firestore} The Firestore database instance.
+ */
+export const getAdminDb = (): FirebaseFirestore.Firestore => {
+  return initializeAdminApp().firestore();
 };
 
-export const getAdminAuth = (): admin.auth.Auth | null => {
-  const app = initializeAdminApp();
-  return app ? admin.auth(app) : null;
+/**
+ * Gets the Auth instance from the lazily-initialized admin app.
+ * @returns {admin.auth.Auth} The Firebase Auth instance.
+ */
+export const getAdminAuth = (): admin.auth.Auth => {
+  return initializeAdminApp().auth();
 };
-
-// For convenience, export lazy-loaded instances.
-// They will be null if the app can't be initialized.
-export const adminDb = getAdminDb();
-export const adminAuth = getAdminAuth();

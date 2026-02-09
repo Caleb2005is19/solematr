@@ -1,3 +1,4 @@
+
 'use server';
 
 import { getAdminUsers as fetchAdminUsers } from "@/lib/data";
@@ -13,7 +14,6 @@ export async function getAdminUsers() {
         return { users };
     } catch (error: any) {
         console.error("Server Action error fetching users:", error.message);
-        // It's important to not leak sensitive error details to the client.
         return { error: "You do not have permission to view users or an internal error occurred." };
     }
 }
