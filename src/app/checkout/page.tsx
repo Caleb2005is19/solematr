@@ -117,10 +117,10 @@ export default function CheckoutPage() {
         
         toast({
             title: "Order Placed Successfully!",
-            description: "Thank you for your purchase. A confirmation has been sent to your email.",
+            description: "Thank you for your purchase. Your order has been recorded.",
         });
         clearCart();
-        router.push('/');
+        router.push('/account/orders');
         return true;
 
     } catch (error) {
@@ -138,16 +138,16 @@ export default function CheckoutPage() {
     setIsProcessing(true);
 
     toast({
-        title: "Processing Payment...",
-        description: `Sending payment prompt to ${values.instasendPhone}. Please check your phone.`,
+        title: "Processing Payment (Simulation)...",
+        description: `Simulating a payment prompt to ${values.instasendPhone}. Please wait.`,
     });
 
     try {
         // Step 1: Initiate payment with Instasend
         await initiateInstasendPayment(values.instasendPhone, totalPrice);
         toast({
-            title: "Payment Successful!",
-            description: "Your payment has been received.",
+            title: "Payment Successful! (Simulation)",
+            description: "Your simulated payment has been received.",
         });
 
         // Step 2: Create the order in Firestore
@@ -156,8 +156,8 @@ export default function CheckoutPage() {
     } catch (error) {
          toast({
             variant: "destructive",
-            title: "Payment Failed",
-            description: (error as Error).message || "Could not process your payment. Please try again.",
+            title: "Payment Failed (Simulation)",
+            description: (error as Error).message || "The simulated payment failed. Please try again.",
         });
     } finally {
         setIsProcessing(false);

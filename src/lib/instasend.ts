@@ -24,13 +24,12 @@ export async function initiateInstasendPayment(phoneNumber: string, amount: numb
     setTimeout(() => {
       // In a real scenario, you'd wait for a webhook or poll an endpoint to confirm payment status.
       // Here, we'll just simulate a successful transaction most of the time.
-      // To test a failed transaction, you could uncomment the following block:
-      /*
+      // To test a failed transaction, we'll introduce a random failure.
       if (Math.random() > 0.8) { // 20% chance of failure for testing
         console.error('Simulated Instasend API failure.');
-        return reject(new Error('The payment provider could not complete the transaction. Please try again.'));
+        return reject(new Error('The payment provider could not complete the transaction. This is a simulated failure.'));
       }
-      */
+      
       
       console.log('Simulated Instasend payment successful.');
       resolve({ success: true });
