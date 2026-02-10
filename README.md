@@ -1,4 +1,4 @@
-# SoleMate - Production Ready
+n not # SoleMate - Production Ready
 
 This is a Next.js e-commerce starter application built with Firebase. It is now configured to be production-ready and safe to deploy or commit to a public repository.
 
