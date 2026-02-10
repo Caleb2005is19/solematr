@@ -218,9 +218,7 @@ export default function Header() {
         </div>
 
         <div className="flex items-center gap-2">
-            <div className="flex">
-                <UserAuthButton />
-            </div>
+            <UserAuthButton />
             <CartIcon />
             {/* Mobile Navigation */}
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
