@@ -41,11 +41,14 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog"
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts"
 import { getAdminUsers } from '@/app/admin/_actions/get-users-action';
 import { getAdminOrders } from './_actions/get-orders-action';
 import { getPlaceholderImage } from '@/lib/placeholder-images';
+import Image from 'next/image';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 type Order = {
   id: string;
@@ -150,6 +153,9 @@ function DashboardTab({ orders, users, shoes }: { orders: Order[] | null, users:
 function OrdersTab({ orders, loading, onUpdate, error }: { orders: Order[] | null, loading: boolean, onUpdate: () => void, error: string | null }) {
   const firestore = useFirestore();
   const { toast } = useToast();
+  const [viewingOrder, setViewingOrder] = useState<Order | null>(null);
+  const noImagePlaceholder = getPlaceholderImage('placeholder-no-image');
+
 
   const handleStatusUpdate = async (orderId: string, userId: string, newStatus: Order['status']) => {
     if (!firestore || !userId) {
@@ -186,91 +192,197 @@ function OrdersTab({ orders, loading, onUpdate, error }: { orders: Order[] | nul
   const sortedOrders = orders?.sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0));
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>All Orders</CardTitle>
-        <CardDescription>A list of all recent orders placed in your store.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Customer</TableHead>
-              <TableHead className="hidden sm:table-cell">Date</TableHead>
-              <TableHead className="hidden md:table-cell">Total</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead><span className="sr-only">Actions</span></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                 <TableRow key={i}>
-                  <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                  <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
-                  <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-20" /></TableCell>
-                  <TableCell><Skeleton className="h-6 w-24 rounded-full" /></TableCell>
-                  <TableCell><Skeleton className="h-8 w-8" /></TableCell>
-                </TableRow>
-              ))
-            ) : sortedOrders && sortedOrders.length > 0 ? (
-              sortedOrders.map((order) => (
-                <TableRow key={order.id}>
-                  <TableCell>
-                    <div className="font-medium">{order.customerInfo.name}</div>
-                    <div className="text-sm text-muted-foreground hidden md:inline">{order.customerInfo.email}</div>
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    {order.createdAt && typeof order.createdAt.seconds === 'number' ? format(new Date(order.createdAt.seconds * 1000), 'MMM d, yyyy') : 'N/A'}
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    KSH {order.totalPrice.toFixed(2)}
-                  </TableCell>
-                  <TableCell>
-                    <Badge 
-                      variant={order.status === 'fulfilled' ? 'default' : order.status === 'unfulfilled' ? 'secondary' : 'outline'}
-                      className={cn({
-                          'bg-green-600/20 text-green-400 border-green-600/40': order.status === 'fulfilled',
-                          'bg-yellow-600/20 text-yellow-400 border-yellow-600/40': order.status === 'unfulfilled',
-                          'bg-blue-600/20 text-blue-400 border-blue-600/40': order.status === 'shipped',
-                          'bg-red-600/20 text-red-400 border-red-600/40': order.status === 'cancelled',
-                      })}
-                    >
-                      {order.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                     <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button aria-haspopup="true" size="icon" variant="ghost">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Toggle menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem>View Details</DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => handleStatusUpdate(order.id, order.userId, 'unfulfilled')}>Mark as Unfulfilled</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleStatusUpdate(order.id, order.userId, 'fulfilled')}>Mark as Fulfilled</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleStatusUpdate(order.id, order.userId, 'shipped')}>Mark as Shipped</DropdownMenuItem>
-                           <DropdownMenuItem onClick={() => handleStatusUpdate(order.id, order.userId, 'cancelled')} className="text-destructive">Cancel Order</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle>All Orders</CardTitle>
+          <CardDescription>A list of all recent orders placed in your store.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
-                  No orders found.
-                </TableCell>
+                <TableHead>Customer</TableHead>
+                <TableHead className="hidden sm:table-cell">Date</TableHead>
+                <TableHead className="hidden md:table-cell">Total</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead><span className="sr-only">Actions</span></TableHead>
               </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                    <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                    <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-20" /></TableCell>
+                    <TableCell><Skeleton className="h-6 w-24 rounded-full" /></TableCell>
+                    <TableCell><Skeleton className="h-8 w-8" /></TableCell>
+                  </TableRow>
+                ))
+              ) : sortedOrders && sortedOrders.length > 0 ? (
+                sortedOrders.map((order) => (
+                  <TableRow key={order.id}>
+                    <TableCell>
+                      <div className="font-medium">{order.customerInfo.name}</div>
+                      <div className="text-sm text-muted-foreground hidden md:inline">{order.customerInfo.email}</div>
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      {order.createdAt && typeof order.createdAt.seconds === 'number' ? format(new Date(order.createdAt.seconds * 1000), 'MMM d, yyyy') : 'N/A'}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      KSH {order.totalPrice.toFixed(2)}
+                    </TableCell>
+                    <TableCell>
+                      <Badge 
+                        variant={order.status === 'fulfilled' ? 'default' : order.status === 'unfulfilled' ? 'secondary' : 'outline'}
+                        className={cn({
+                            'bg-green-600/20 text-green-400 border-green-600/40': order.status === 'fulfilled',
+                            'bg-yellow-600/20 text-yellow-400 border-yellow-600/40': order.status === 'unfulfilled',
+                            'bg-blue-600/20 text-blue-400 border-blue-600/40': order.status === 'shipped',
+                            'bg-red-600/20 text-red-400 border-red-600/40': order.status === 'cancelled',
+                        })}
+                      >
+                        {order.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button aria-haspopup="true" size="icon" variant="ghost">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Toggle menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem onClick={() => setViewingOrder(order)}>View Details</DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleStatusUpdate(order.id, order.userId, 'unfulfilled')}>Mark as Unfulfilled</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleStatusUpdate(order.id, order.userId, 'fulfilled')}>Mark as Fulfilled</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleStatusUpdate(order.id, order.userId, 'shipped')}>Mark as Shipped</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleStatusUpdate(order.id, order.userId, 'cancelled')} className="text-destructive">Cancel Order</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-24 text-center">
+                    No orders found.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+      
+      <Dialog open={!!viewingOrder} onOpenChange={(open) => !open && setViewingOrder(null)}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Order Details</DialogTitle>
+            <DialogDescription>
+              Viewing details for order #{viewingOrder?.id.slice(0, 7)}...
+            </DialogDescription>
+          </DialogHeader>
+          {viewingOrder && (
+            <>
+              <ScrollArea className="max-h-[60vh] -mx-6 px-6">
+                <div className="space-y-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-base">Customer</CardTitle>
+                            </CardHeader>
+                            <CardContent className="text-sm space-y-1">
+                                <p className="font-medium">{viewingOrder.customerInfo.name}</p>
+                                <p className="text-muted-foreground">{viewingOrder.customerInfo.email}</p>
+                                <p className="text-muted-foreground pt-2">
+                                    {viewingOrder.customerInfo.address}<br />
+                                    {viewingOrder.customerInfo.city}, {viewingOrder.customerInfo.postalCode}<br />
+                                    {viewingOrder.customerInfo.country}
+                                </p>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-base">Order Summary</CardTitle>
+                            </CardHeader>
+                            <CardContent className="text-sm space-y-2">
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Status:</span>
+                                    <Badge 
+                                        className={cn({
+                                            'bg-green-600/20 text-green-400 border-green-600/40': viewingOrder.status === 'fulfilled' || viewingOrder.status === 'shipped',
+                                            'bg-yellow-600/20 text-yellow-400 border-yellow-600/40': viewingOrder.status === 'unfulfilled',
+                                            'bg-blue-600/20 text-blue-400 border-blue-600/40': viewingOrder.status === 'shipped',
+                                            'bg-red-600/20 text-red-400 border-red-600/40': viewingOrder.status === 'cancelled',
+                                        })}
+                                    >{viewingOrder.status}</Badge>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Date:</span>
+                                    <span>{viewingOrder.createdAt && typeof viewingOrder.createdAt.seconds === 'number' ? format(new Date(viewingOrder.createdAt.seconds * 1000), 'MMM d, yyyy') : 'N/A'}</span>
+                                </div>
+                                <div className="flex justify-between font-bold text-base pt-2">
+                                    <span>Total:</span>
+                                    <span>KSH {viewingOrder.totalPrice.toFixed(2)}</span>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                    
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-base">Items ({viewingOrder.items.length})</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Product</TableHead>
+                                        <TableHead className="text-center">Qty</TableHead>
+                                        <TableHead className="text-right">Price</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {viewingOrder.items.map((item, index) => (
+                                        <TableRow key={index}>
+                                            <TableCell>
+                                                <div className="flex items-center gap-3">
+                                                    <Image
+                                                        src={item.imageUrl || noImagePlaceholder?.imageUrl || ''}
+                                                        alt={item.name}
+                                                        width={48}
+                                                        height={48}
+                                                        className="rounded-md object-cover border"
+                                                    />
+                                                    <div>
+                                                        <p className="font-medium">{item.name}</p>
+                                                        <p className="text-sm text-muted-foreground">Size: {item.size}</p>
+                                                    </div>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-center">{item.quantity}</TableCell>
+                                            <TableCell className="text-right">KSH {(item.price * item.quantity).toFixed(2)}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </div>
+              </ScrollArea>
+              <DialogFooter className="pt-4">
+                  <Button variant="outline" onClick={() => setViewingOrder(null)}>Close</Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
