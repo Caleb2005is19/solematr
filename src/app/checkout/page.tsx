@@ -80,18 +80,19 @@ export default function CheckoutPage() {
   }
 
   const createOrderInFirestore = async (values: z.infer<typeof formSchema>) => {
-    if (!user || !firestore) {
+    if (!firestore) {
         toast({
             variant: "destructive",
             title: "Error",
-            description: "You must be signed in to place an order.",
+            description: "Database connection not available.",
         });
         return false;
     }
 
     try {
         const orderData = {
-            userId: user.uid,
+            // userId will be null for guests
+            userId: user?.uid || null,
             customerInfo: {
                 name: values.name,
                 email: values.email,
@@ -114,7 +115,12 @@ export default function CheckoutPage() {
             createdAt: serverTimestamp(),
         };
         
-        const ordersCollectionRef = collection(firestore, 'users', user.uid, 'orders');
+        // If user is logged in, store order under their user document.
+        // If not, store it in the top-level 'orders' collection.
+        const ordersCollectionRef = user
+            ? collection(firestore, 'users', user.uid, 'orders')
+            : collection(firestore, 'orders');
+
         await addDoc(ordersCollectionRef, orderData);
         
         toast({
@@ -122,7 +128,8 @@ export default function CheckoutPage() {
             description: "Thank you for your purchase. Your order has been recorded.",
         });
         clearCart();
-        router.push('/account/orders');
+        // Redirect to account page if logged in, otherwise home page.
+        router.push(user ? '/account/orders' : '/');
         return true;
 
     } catch (error) {
@@ -232,11 +239,10 @@ export default function CheckoutPage() {
                 </CardContent>
             </Card>
             
-            <Button type="submit" size="lg" className="w-full text-lg" disabled={isProcessing || !user || isUserLoading}>
-                {isProcessing || isUserLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Lock className="mr-2 h-5 w-5" />}
-                {isUserLoading ? 'Verifying...' : isProcessing ? 'Processing...' : `Pay securely - KSH ${totalPrice.toFixed(2)}`}
+            <Button type="submit" size="lg" className="w-full text-lg" disabled={isProcessing || isUserLoading}>
+                {isUserLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : isProcessing ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Lock className="mr-2 h-5 w-5" />}
+                {isUserLoading ? 'Loading...' : isProcessing ? 'Processing...' : `Pay securely - KSH ${totalPrice.toFixed(2)}`}
             </Button>
-            {!isUserLoading && !user && <p className="text-sm text-center text-destructive">Please sign in to place an order.</p>}
           </form>
         </Form>
       </div>

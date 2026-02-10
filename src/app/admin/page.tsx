@@ -52,7 +52,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 type Order = {
   id: string;
-  userId: string;
+  userId: string | null;
   customerInfo: {
     name: string;
     email: string;
@@ -157,17 +157,14 @@ function OrdersTab({ orders, loading, onUpdate, error }: { orders: Order[] | nul
   const noImagePlaceholder = getPlaceholderImage('placeholder-no-image');
 
 
-  const handleStatusUpdate = async (orderId: string, userId: string, newStatus: Order['status']) => {
-    if (!firestore || !userId) {
-        toast({
-            variant: "destructive",
-            title: "Update Failed",
-            description: "User information is missing for this order.",
-        });
-        return;
-    };
+  const handleStatusUpdate = async (orderId: string, userId: string | null, newStatus: Order['status']) => {
+    if (!firestore) return;
     
-    const orderRef = doc(firestore, 'users', userId, 'orders', orderId);
+    // If the order has a userId, it's in a user's subcollection.
+    // Otherwise, it's in the top-level 'orders' collection for guests.
+    const orderRef = userId
+      ? doc(firestore, 'users', userId, 'orders', orderId)
+      : doc(firestore, 'orders', orderId);
     
     try {
         await updateDoc(orderRef, { status: newStatus });
@@ -177,10 +174,15 @@ function OrdersTab({ orders, loading, onUpdate, error }: { orders: Order[] | nul
         });
         onUpdate(); // Trigger a refresh of the order list
     } catch (err: any) {
+        console.error("Failed to update order status:", err);
+        let description = "Could not update the order status.";
+        if (err.message?.includes('permission-denied') || err.message?.includes('insufficient permissions')) {
+            description = "You don't have permission to update this. This might be a guest order. Guest order status updates need to be enabled in your Firestore Rules."
+        }
         toast({
             variant: "destructive",
             title: "Update Failed",
-            description: err.message || "Could not update the order status.",
+            description: description,
         });
     }
   };
@@ -237,7 +239,7 @@ function OrdersTab({ orders, loading, onUpdate, error }: { orders: Order[] | nul
                       <Badge 
                         variant={order.status === 'fulfilled' ? 'default' : order.status === 'unfulfilled' ? 'secondary' : 'outline'}
                         className={cn({
-                            'bg-green-600/20 text-green-400 border-green-600/40': order.status === 'fulfilled',
+                            'bg-green-600/20 text-green-400 border-green-600/40': order.status === 'fulfilled' || order.status === 'shipped',
                             'bg-yellow-600/20 text-yellow-400 border-yellow-600/40': order.status === 'unfulfilled',
                             'bg-blue-600/20 text-blue-400 border-blue-600/40': order.status === 'shipped',
                             'bg-red-600/20 text-red-400 border-red-600/40': order.status === 'cancelled',
@@ -336,41 +338,45 @@ function OrdersTab({ orders, loading, onUpdate, error }: { orders: Order[] | nul
                     
                     <Card>
                         <CardHeader>
-                            <CardTitle className="text-base">Items ({viewingOrder.items.length})</CardTitle>
+                            <CardTitle className="text-base">Items ({viewingOrder?.items?.length || 0})</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Product</TableHead>
-                                        <TableHead className="text-center">Qty</TableHead>
-                                        <TableHead className="text-right">Price</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {viewingOrder.items.map((item, index) => (
-                                        <TableRow key={index}>
-                                            <TableCell>
-                                                <div className="flex items-center gap-3">
-                                                    <Image
-                                                        src={item.imageUrl || noImagePlaceholder?.imageUrl || ''}
-                                                        alt={item.name}
-                                                        width={48}
-                                                        height={48}
-                                                        className="rounded-md object-cover border"
-                                                    />
-                                                    <div>
-                                                        <p className="font-medium">{item.name}</p>
-                                                        <p className="text-sm text-muted-foreground">Size: {item.size}</p>
-                                                    </div>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="text-center">{item.quantity}</TableCell>
-                                            <TableCell className="text-right">KSH {(item.price * item.quantity).toFixed(2)}</TableCell>
+                            {viewingOrder?.items && viewingOrder.items.length > 0 ? (
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Product</TableHead>
+                                            <TableHead className="text-center">Qty</TableHead>
+                                            <TableHead className="text-right">Price</TableHead>
                                         </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {viewingOrder.items.map((item, index) => (
+                                            <TableRow key={index}>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-3">
+                                                        <Image
+                                                            src={item.imageUrl || noImagePlaceholder?.imageUrl || ''}
+                                                            alt={item.name}
+                                                            width={48}
+                                                            height={48}
+                                                            className="rounded-md object-cover border"
+                                                        />
+                                                        <div>
+                                                            <p className="font-medium">{item.name}</p>
+                                                            <p className="text-sm text-muted-foreground">Size: {item.size}</p>
+                                                        </div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-center">{item.quantity}</TableCell>
+                                                <TableCell className="text-right">KSH {(item.price * item.quantity).toFixed(2)}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            ) : (
+                                <p className="text-sm text-muted-foreground text-center py-4">No items found in this order.</p>
+                            )}
                         </CardContent>
                     </Card>
                 </div>
