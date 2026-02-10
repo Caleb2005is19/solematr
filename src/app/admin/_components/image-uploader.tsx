@@ -7,10 +7,11 @@ import { Camera, Upload, Loader2, RefreshCw, CheckCircle, AlertTriangle, SwitchC
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { useStorage } from '@/firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
 import type { Shoe } from '@/lib/types';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Progress } from '@/components/ui/progress';
 
 interface ImageUploaderProps {
   onImageUploaded: (image: Shoe['images'][0]) => void;
@@ -22,6 +23,7 @@ export function ImageUploader({ onImageUploaded }: ImageUploaderProps) {
 
   const [activeTab, setActiveTab] = useState('upload');
   const [isUploading, setIsUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   // File Upload State
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -98,12 +100,15 @@ export function ImageUploader({ onImageUploaded }: ImageUploaderProps) {
 
   const handleUpload = async () => {
     let imageBlob: Blob | null = null;
+    let imageName: string = 'product-image.jpg';
 
     if (activeTab === 'upload' && selectedFile) {
         imageBlob = selectedFile;
+        imageName = selectedFile.name;
     } else if (activeTab === 'camera' && capturedImage) {
         const response = await fetch(capturedImage);
         imageBlob = await response.blob();
+        imageName = `capture-${Date.now()}.jpg`
     }
 
     if (!imageBlob || !storage) {
@@ -112,46 +117,66 @@ export function ImageUploader({ onImageUploaded }: ImageUploaderProps) {
     }
 
     setIsUploading(true);
+    setProgress(0);
     const imageId = uuidv4();
-    const filePath = `product-images/${imageId}.jpg`;
+    const filePath = `product-images/${imageId}-${imageName}`;
     const storageRef = ref(storage, filePath);
+    const uploadTask = uploadBytesResumable(storageRef, imageBlob);
 
-    try {
-      const snapshot = await uploadBytes(storageRef, imageBlob);
-      const downloadURL = await getDownloadURL(snapshot.ref);
-
-      onImageUploaded({
-        id: imageId,
-        url: downloadURL,
-        alt: 'A product image',
-        hint: 'shoe photo',
-        path: filePath,
-      });
-
-      toast({
-        title: 'Upload Successful',
-        description: 'Your image has been added.',
-        action: <CheckCircle className="text-green-500" />,
-      });
-    } catch (error: any) {
-      console.error('Upload failed:', error);
-      let description = 'There was a problem uploading your image.';
-      // Check for specific Firebase Storage error codes
-      if (error.code === 'storage/unauthorized') {
-        description = 'Permission Denied. Please ensure you are logged in as an admin and that storage security rules allow writes for admins.';
-      } else if (error.code === 'storage/object-not-found') {
-        description = 'File not found. This can happen if the file was moved or deleted before upload completed.';
-      } else {
-        description = error.message || description;
+    uploadTask.on(
+      'state_changed',
+      (snapshot) => {
+        const progressPercent = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        setProgress(progressPercent);
+      },
+      (error) => {
+        console.error('Upload failed:', error);
+        let description = 'There was a problem uploading your image.';
+        // Check for specific Firebase Storage error codes
+        switch (error.code) {
+          case 'storage/unauthorized':
+            description = 'Permission Denied. Ensure your Storage security rules allow writes for admins.';
+            break;
+          case 'storage/canceled':
+            description = 'The upload was canceled.';
+            break;
+          case 'storage/unknown':
+            description = 'An unknown error occurred. Please check your network connection and storage rules.';
+            break;
+          default:
+            description = error.message;
+            break;
+        }
+        toast({
+          variant: 'destructive',
+          title: 'Upload Failed',
+          description: description,
+        });
+        setIsUploading(false);
+        setProgress(0);
+      },
+      async () => {
+        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+        onImageUploaded({
+          id: imageId,
+          url: downloadURL,
+          alt: 'A product image',
+          hint: 'shoe photo',
+          path: filePath,
+        });
+        toast({
+          title: 'Upload Successful',
+          description: 'Your image has been added.',
+          action: <CheckCircle className="text-green-500" />,
+        });
+        
+        // Reset state after successful upload
+        setIsUploading(false);
+        setProgress(0);
+        setSelectedFile(null);
+        setCapturedImage(null);
       }
-      toast({
-        variant: 'destructive',
-        title: 'Upload Failed',
-        description: description,
-      });
-    } finally {
-      setIsUploading(false);
-    }
+    );
   };
 
   return (
@@ -165,7 +190,7 @@ export function ImageUploader({ onImageUploaded }: ImageUploaderProps) {
         <TabsContent value="upload">
           <div className="p-4 border rounded-md text-center space-y-4">
             <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
-            <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
+            <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
                 <Upload className="mr-2 h-4 w-4" />
                 Choose a file
             </Button>
@@ -201,15 +226,15 @@ export function ImageUploader({ onImageUploaded }: ImageUploaderProps) {
              <canvas ref={canvasRef} style={{ display: 'none' }} />
             <div className="flex justify-center gap-4">
                 {capturedImage ? (
-                    <Button type="button" variant="outline" onClick={() => setCapturedImage(null)}>
+                    <Button type="button" variant="outline" onClick={() => setCapturedImage(null)} disabled={isUploading}>
                         <RefreshCw className="mr-2 h-4 w-4" /> Retake
                     </Button>
                 ) : (
                     <>
-                        <Button type="button" onClick={handleCapture} disabled={!hasCameraPermission}>
+                        <Button type="button" onClick={handleCapture} disabled={!hasCameraPermission || isUploading}>
                             <Camera className="mr-2 h-4 w-4" /> Capture
                         </Button>
-                        <Button type="button" variant="outline" size="icon" onClick={toggleFacingMode} disabled={!hasCameraPermission}>
+                        <Button type="button" variant="outline" size="icon" onClick={toggleFacingMode} disabled={!hasCameraPermission || isUploading}>
                             <SwitchCamera className="h-4 w-4"/>
                         </Button>
                     </>
@@ -219,6 +244,13 @@ export function ImageUploader({ onImageUploaded }: ImageUploaderProps) {
         </TabsContent>
       </Tabs>
 
+      {isUploading && (
+        <div className="space-y-2">
+            <Progress value={progress} />
+            <p className="text-sm text-center text-muted-foreground">Uploading... {Math.round(progress)}%</p>
+        </div>
+      )}
+
       <Button 
         type="button" 
         className="w-full" 
@@ -226,7 +258,7 @@ export function ImageUploader({ onImageUploaded }: ImageUploaderProps) {
         disabled={isUploading || (activeTab === 'upload' && !selectedFile) || (activeTab === 'camera' && !capturedImage)}
       >
         {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-        Upload Image
+        {isUploading ? 'Uploading...' : 'Upload Image'}
       </Button>
     </div>
   );
