@@ -107,7 +107,7 @@ export function ImageUploader({ onImageUploaded }: ImageUploaderProps) {
     }
 
     if (!imageBlob || !storage) {
-      toast({ variant: 'destructive', title: 'No image selected' });
+      toast({ variant: 'destructive', title: 'No image selected or storage unavailable' });
       return;
     }
 
@@ -133,12 +133,21 @@ export function ImageUploader({ onImageUploaded }: ImageUploaderProps) {
         description: 'Your image has been added.',
         action: <CheckCircle className="text-green-500" />,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Upload failed:', error);
+      let description = 'There was a problem uploading your image.';
+      // Check for specific Firebase Storage error codes
+      if (error.code === 'storage/unauthorized') {
+        description = 'Permission Denied. Please ensure you are logged in as an admin and that storage security rules allow writes for admins.';
+      } else if (error.code === 'storage/object-not-found') {
+        description = 'File not found. This can happen if the file was moved or deleted before upload completed.';
+      } else {
+        description = error.message || description;
+      }
       toast({
         variant: 'destructive',
         title: 'Upload Failed',
-        description: 'There was a problem uploading your image.',
+        description: description,
       });
     } finally {
       setIsUploading(false);
