@@ -10,6 +10,7 @@ export const firebaseConfig: FirebaseOptions = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
 };
 
@@ -17,11 +18,12 @@ export const firebaseConfig: FirebaseOptions = {
 if (
   !firebaseConfig.projectId ||
   !firebaseConfig.apiKey ||
-  !firebaseConfig.authDomain
+  !firebaseConfig.authDomain ||
+  !firebaseConfig.storageBucket
 ) {
-  // In a real app, you might want to show a more user-friendly error page.
-  // For this context, we log a warning to guide the developer.
-  console.warn(
-    'Firebase configuration is missing. Please check your .env.local file and compare it with .env.example'
+  // We throw an error instead of a warning to make it clear that the app cannot run without these.
+  // This helps the developer to immediately notice the configuration issue.
+  throw new Error(
+    'Firebase configuration is missing or incomplete. Please check your .env.local file and ensure all NEXT_PUBLIC_FIREBASE_* variables are set correctly. Refer to README.md for more details.'
   );
 }
