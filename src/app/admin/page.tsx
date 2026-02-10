@@ -401,14 +401,16 @@ function ProductsTab({shoes, loading, error, onSave, onDelete}: {shoes: Shoe[] |
                         </Table>
                     </CardContent>
                 </Card>
-                <DialogContent className="sm:max-w-[800px]">
+                <DialogContent className="sm:max-w-[800px] grid max-h-[90vh] grid-rows-[auto_minmax(0,1fr)]">
                     <DialogHeader>
                         <DialogTitle>{selectedShoe ? 'Edit Product' : 'Add New Product'}</DialogTitle>
                         <DialogDescription>
                             {selectedShoe ? 'Update the details for this product.' : 'Fill in the form to add a new product to your store.'}
                         </DialogDescription>
                     </DialogHeader>
-                    <ProductForm shoe={selectedShoe} onFormSubmit={handleFormClose} />
+                    <div className="overflow-y-auto -mr-4 pr-4">
+                        <ProductForm shoe={selectedShoe} onFormSubmit={handleFormClose} />
+                    </div>
                 </DialogContent>
             </Dialog>
             
