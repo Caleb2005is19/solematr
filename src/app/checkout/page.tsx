@@ -19,10 +19,10 @@ import {
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { Lock, Smartphone } from 'lucide-react';
+import { Lock, Smartphone, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { initiateInstasendPayment } from '@/lib/instasend';
-import { useAuth, useFirestore } from '@/firebase';
+import { useUser, useFirestore } from '@/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 const formSchema = z.object({
@@ -40,14 +40,14 @@ export default function CheckoutPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
-  const { user } = useAuth();
+  const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: user?.email ?? '', 
-      name: user?.displayName ?? '', 
+      email: '', // Initialize as empty, will be set by useEffect
+      name: '', // Initialize as empty, will be set by useEffect
       address: '', 
       city: 'Nairobi', 
       postalCode: '00100', 
@@ -56,16 +56,18 @@ export default function CheckoutPage() {
     },
   });
   
+  // This effect now correctly pre-fills the form once the user object is available.
   useEffect(() => {
     if (user) {
         form.reset({
-            ...form.getValues(),
+            ...form.getValues(), // Keep other fields the user might have started filling
             email: user.email ?? '',
             name: user.displayName ?? '',
         });
     }
   }, [user, form]);
 
+  // This effect redirects to home if the cart is empty.
   useEffect(() => {
     if (!isProcessing && items.length === 0) {
       router.replace('/');
@@ -230,11 +232,11 @@ export default function CheckoutPage() {
                 </CardContent>
             </Card>
             
-            <Button type="submit" size="lg" className="w-full text-lg" disabled={isProcessing || !user}>
-                <Lock className="mr-2 h-5 w-5" />
-                {isProcessing ? 'Processing...' : `Pay securely - KSH ${totalPrice.toFixed(2)}`}
+            <Button type="submit" size="lg" className="w-full text-lg" disabled={isProcessing || !user || isUserLoading}>
+                {isProcessing || isUserLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Lock className="mr-2 h-5 w-5" />}
+                {isUserLoading ? 'Verifying...' : isProcessing ? 'Processing...' : `Pay securely - KSH ${totalPrice.toFixed(2)}`}
             </Button>
-            {!user && <p className="text-sm text-center text-destructive">Please sign in to place an order.</p>}
+            {!isUserLoading && !user && <p className="text-sm text-center text-destructive">Please sign in to place an order.</p>}
           </form>
         </Form>
       </div>
