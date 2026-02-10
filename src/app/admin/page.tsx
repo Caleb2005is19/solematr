@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useCollection, useMemoFirebase } from '@/firebase';
@@ -222,7 +221,7 @@ function OrdersTab({ orders, loading, onUpdate, error }: { orders: Order[] | nul
                     <div className="text-sm text-muted-foreground hidden md:inline">{order.customerInfo.email}</div>
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
-                    {order.createdAt ? format(new Date(order.createdAt.seconds * 1000), 'MMM d, yyyy') : 'N/A'}
+                    {order.createdAt && typeof order.createdAt.seconds === 'number' ? format(new Date(order.createdAt.seconds * 1000), 'MMM d, yyyy') : 'N/A'}
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
                     KSH {order.totalPrice.toFixed(2)}
