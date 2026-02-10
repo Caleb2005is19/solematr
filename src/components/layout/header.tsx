@@ -129,9 +129,11 @@ function UserAuthButton() {
                             </Link>
                         </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem>
-                        <User className="mr-2 h-4 w-4" />
-                        <span>My Orders</span>
+                    <DropdownMenuItem asChild>
+                        <Link href="/account/orders">
+                            <User className="mr-2 h-4 w-4" />
+                            <span>My Orders</span>
+                        </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleSignOut}>
