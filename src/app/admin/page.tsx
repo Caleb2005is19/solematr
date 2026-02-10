@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useCollection, useMemoFirebase } from '@/firebase';
@@ -87,7 +88,9 @@ function DashboardTab({ orders, users, shoes }: { orders: Order[] | null, users:
     const totalRevenue = orders?.reduce((acc, order) => acc + order.totalPrice, 0) || 0;
     const salesData = orders
         ? Object.entries(
-            orders.reduce((acc: { [key: string]: number }, order) => {
+            orders
+              .filter(order => order.createdAt && typeof order.createdAt.seconds === 'number')
+              .reduce((acc: { [key: string]: number }, order) => {
                 const month = format(new Date(order.createdAt.seconds * 1000), 'MMM');
                 acc[month] = (acc[month] || 0) + order.totalPrice;
                 return acc;
@@ -181,7 +184,7 @@ function OrdersTab({ orders, loading, onUpdate, error }: { orders: Order[] | nul
     return <div className="text-destructive">Error loading orders: {error}</div>;
   }
 
-  const sortedOrders = orders?.sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
+  const sortedOrders = orders?.sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0));
 
   return (
     <Card>
@@ -219,7 +222,7 @@ function OrdersTab({ orders, loading, onUpdate, error }: { orders: Order[] | nul
                     <div className="text-sm text-muted-foreground hidden md:inline">{order.customerInfo.email}</div>
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
-                    {format(new Date(order.createdAt.seconds * 1000), 'MMM d, yyyy')}
+                    {order.createdAt ? format(new Date(order.createdAt.seconds * 1000), 'MMM d, yyyy') : 'N/A'}
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
                     KSH {order.totalPrice.toFixed(2)}
@@ -619,3 +622,5 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+
+    
