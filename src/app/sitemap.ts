@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next'
 import { getShoes, getAllBrands } from '@/lib/data';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://your-production-url.com';
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://solemate.co.ke';
 
   // Base static routes
   const routes = [
