@@ -10,7 +10,7 @@ export async function uploadImageAction(formData: FormData) {
 
   // Securely use your Cloudinary details on the server.
   const cloudName = "Carlbtw"; 
-  const uploadPreset = "227f34f4-9932-4512-82a0-d13b5afe528c";
+  const uploadPreset = "Carlbtw"; 
 
   const cloudinaryFormData = new FormData();
   cloudinaryFormData.append("file", file);
