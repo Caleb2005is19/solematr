@@ -111,12 +111,8 @@ export function ImageUploader({ onImageUploaded }: ImageUploaderProps) {
 
     setIsUploading(true);
 
-    const uniqueFileName = `${Date.now()}-${imageName.replace(/\s+/g, '-')}`;
-    const filePath = `product-images/${uniqueFileName}`;
-
     const formData = new FormData();
     formData.append('file', imageBlob, imageName);
-    formData.append('filePath', filePath);
 
     try {
         const result = await uploadImageAction(formData);
@@ -130,7 +126,7 @@ export function ImageUploader({ onImageUploaded }: ImageUploaderProps) {
           url: result.url,
           alt: 'A product image',
           hint: 'shoe photo',
-          path: result.path,
+          public_id: result.public_id,
         });
 
         toast({

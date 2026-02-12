@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useFirestore, useStorage } from '@/firebase';
+import { useFirestore } from '@/firebase';
 import type { Shoe } from '@/lib/types';
 import { useState, useEffect } from 'react';
 import { Loader2, Plus, Trash2 } from 'lucide-react';
@@ -33,7 +33,6 @@ import { useToast } from '@/hooks/use-toast';
 import { getPlaceholderImage } from '@/lib/placeholder-images';
 import { ImageUploader } from './image-uploader';
 import Image from 'next/image';
-import { deleteObject, ref } from 'firebase/storage';
 
 const formSchema = z.object({
   id: z.string().optional(),
@@ -51,7 +50,7 @@ const formSchema = z.object({
     url: z.string(),
     alt: z.string(),
     hint: z.string(),
-    path: z.string().optional(),
+    public_id: z.string().optional(),
   })).min(1, 'At least one image is required.'),
 });
 
@@ -66,7 +65,6 @@ const COMMON_SIZES = [7, 7.5, 8, 8.5, 9, 9.5, 10, 10.5, 11, 11.5, 12, 13];
 
 export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
   const firestore = useFirestore();
-  const storage = useStorage();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [customSizeInput, setCustomSizeInput] = useState('');
@@ -115,28 +113,16 @@ export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
   }
 
   const handleImageDelete = async (imageToDelete: Shoe['images'][0]) => {
-    // If image has a path, it's in Firebase storage, so delete it from there.
-    if (imageToDelete.path) {
-        try {
-            if (!storage) throw new Error("Storage not available");
-            const imageRef = ref(storage, imageToDelete.path);
-            await deleteObject(imageRef);
-            toast({
-              title: "Image Deleted",
-              description: "The image has been removed from storage.",
-            });
-        } catch (error: any) {
-            // If deletion fails, still allow removal from product, but notify user.
-            console.error("Failed to delete image from storage:", error);
-            toast({
-              variant: "destructive",
-              title: "Storage Deletion Failed",
-              description: "Could not remove the image from storage, but it will be removed from this product. You may need to delete it manually from the Firebase console.",
-            });
-        }
-    }
+    // This function no longer deletes from the cloud storage provider directly
+    // to avoid needing complex, secure backend deletion logic for Cloudinary.
+    // It just removes the image from the product form.
     const updatedImages = (currentImages || []).filter(img => img.id !== imageToDelete.id);
     form.setValue('images', updatedImages, { shouldValidate: true });
+    
+    toast({
+      title: "Image Removed",
+      description: "The image has been removed from this product. Note: The image file still exists on Cloudinary and may need to be deleted manually.",
+    });
   }
 
   const onSubmit = async (data: ProductFormValues) => {
@@ -154,7 +140,7 @@ export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
             url: imageUrl,
             alt: `A photo of ${data.name}`,
             hint: newProductPlaceholder?.imageHint || 'shoe photo',
-            path: undefined
+            public_id: undefined
         });
     }
 
@@ -168,10 +154,10 @@ export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
         price: data.price,
         description: data.description,
         images: (data.images || []).map(img => {
-          const {id, url, alt, hint, path} = img;
+          const {id, url, alt, hint, public_id} = img;
           const imageObject: Shoe['images'][0] = {id, url, alt, hint};
-          if (path) {
-            imageObject.path = path;
+          if (public_id) {
+            imageObject.public_id = public_id;
           }
           return imageObject;
         }),

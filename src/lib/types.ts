@@ -10,9 +10,8 @@ export type Shoe = {
     url: string;
     alt: string;
     hint: string;
-    path?: string; // Add storage path for deletion
+    public_id?: string; // Cloudinary public_id for management
   }[];
-  sizes: number[];
   reviews: {
     id: number;
     rating: number;

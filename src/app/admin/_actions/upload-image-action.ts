@@ -1,7 +1,6 @@
 'use server';
 
-import { getAdminStorage } from '@/lib/firebase-admin';
-
+// This server action now acts as a secure proxy to Cloudinary.
 export async function uploadImageAction(formData: FormData) {
   const file = formData.get('file') as File | null;
   
@@ -9,39 +8,39 @@ export async function uploadImageAction(formData: FormData) {
     return { success: false, error: 'No file provided.' };
   }
 
-  const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
-  if (!bucketName) {
-    return { success: false, error: 'Configuration Error: The `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` environment variable is not set on the server. Please add it to your Vercel project settings.' };
-  }
+  // Securely use your Cloudinary details on the server.
+  const cloudName = "Carlbtw"; 
+  const uploadPreset = "227f34f4-9932-4512-82a0-d13b5afe528c";
+
+  const cloudinaryFormData = new FormData();
+  cloudinaryFormData.append("file", file);
+  cloudinaryFormData.append("upload_preset", uploadPreset);
 
   try {
-    const storage = getAdminStorage();
-    // Pass the bucket name explicitly to be safe
-    const bucket = storage.bucket(bucketName);
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+      {
+        method: "POST",
+        body: cloudinaryFormData,
+      }
+    );
 
-    // The file path is generated on the client and passed via FormData
-    const filePath = formData.get('filePath') as string;
-    if (!filePath) {
-      return { success: false, error: 'File path not provided.' };
+    const data = await response.json();
+
+    if (!response.ok) {
+      // Cloudinary sends error details in a nested 'error' object.
+      throw new Error(data.error?.message || 'Cloudinary upload failed.');
     }
 
-    const fileUpload = bucket.file(filePath);
-    const buffer = Buffer.from(await file.arrayBuffer());
-
-    // Upload the file and make it public in one step
-    await fileUpload.save(buffer, {
-      contentType: file.type,
-      public: true, 
-    });
-
-    // The public URL can be constructed deterministically, which is more reliable
-    const downloadURL = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
-    
-    return { success: true, url: downloadURL, path: filePath };
+    // Return the secure URL and the public_id for future management.
+    return { 
+      success: true, 
+      url: data.secure_url,
+      public_id: data.public_id,
+    };
 
   } catch (error: any) {
-    console.error('Server-side upload failed:', error);
-    // Propagate the actual error message from the Firebase Admin SDK to the client.
+    console.error('Server-side Cloudinary upload failed:', error);
     return { success: false, error: error.message || 'An unknown server error occurred during the upload.' };
   }
 }

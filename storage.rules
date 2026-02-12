@@ -1,17 +1,2 @@
-rules_version = '2';
-service firebase.storage {
-  match /b/{bucket}/o {
-    // Allow public read access on all files. Users need to be able to see
-    // product images in the store.
-    match /{allPaths=**} {
-      allow get: if true;
-    }
-
-    // Allow writes (uploads, updates, deletes) on any path under product-images
-    // only for authenticated users. This is secure because the upload UI is in
-    // the admin panel. Using a recursive wildcard fixes issues with nested paths.
-    match /product-images/{allPaths=**} {
-      allow write: if request.auth != null;
-    }
-  }
-}
+// This file is no longer used as image storage has been migrated to Cloudinary.
+// The content has been cleared to prevent any potential conflicts.
