@@ -122,8 +122,8 @@ export function ImageUploader({ onImageUploaded }: ImageUploaderProps) {
 
     setIsUploading(true);
 
-    const imageId = uuidv4();
-    const filePath = `product-images/${imageId}-${imageName}`;
+    const uniqueFileName = `${Date.now()}-${imageName}`;
+    const filePath = `product-images/${uniqueFileName}`;
     const storageRef = ref(storage, filePath);
 
     try {
@@ -131,7 +131,7 @@ export function ImageUploader({ onImageUploaded }: ImageUploaderProps) {
         const downloadURL = await getDownloadURL(snapshot.ref);
         
         onImageUploaded({
-          id: imageId,
+          id: uuidv4(),
           url: downloadURL,
           alt: 'A product image',
           hint: 'shoe photo',
