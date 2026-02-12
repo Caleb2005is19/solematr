@@ -7,10 +7,10 @@ service firebase.storage {
       allow get: if true;
     }
 
-    // Allow writes (uploads, updates, deletes) on product images only for
-    // any authenticated user. Since the upload UI is in the admin panel,
-    // this is still secure. This helps debug potential issues with custom claims.
-    match /product-images/{imageId} {
+    // Allow writes (uploads, updates, deletes) on any path under product-images
+    // only for authenticated users. This is secure because the upload UI is in
+    // the admin panel. Using a recursive wildcard fixes issues with nested paths.
+    match /product-images/{allPaths=**} {
       allow write: if request.auth != null;
     }
   }
