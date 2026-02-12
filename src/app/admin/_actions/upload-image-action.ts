@@ -11,7 +11,14 @@ export async function uploadImageAction(formData: FormData) {
   }
 
   try {
-    const bucket = getAdminStorage().bucket();
+    const storage = getAdminStorage();
+
+    // Explicitly check for the bucket name. This is a common failure point if the env var is missing.
+    const bucketName = storage.bucket().name;
+    if (!bucketName) {
+        return { success: false, error: 'Firebase Storage bucket name not found. Please ensure the NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET environment variable is set correctly.' };
+    }
+    const bucket = storage.bucket();
 
     // The file path is generated on the client and passed via FormData
     const filePath = formData.get('filePath') as string;
@@ -35,6 +42,7 @@ export async function uploadImageAction(formData: FormData) {
 
   } catch (error: any) {
     console.error('Server-side upload failed:', error);
-    return { success: false, error: 'Failed to upload image on the server. Check server logs for details.' };
+    // Propagate the actual error message from the Firebase Admin SDK to the client.
+    return { success: false, error: error.message || 'An unknown server error occurred during the upload.' };
   }
 }
