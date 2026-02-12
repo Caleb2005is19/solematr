@@ -18,7 +18,7 @@ function initializeAdminApp(): admin.App {
     return existingApp;
   }
 
-  const { FIREBASE_ADMIN_SERVICE_ACCOUNT_BASE64 } = process.env;
+  const { FIREBASE_ADMIN_SERVICE_ACCOUNT_BASE64, NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET } = process.env;
 
   if (!FIREBASE_ADMIN_SERVICE_ACCOUNT_BASE64) {
     throw new Error(
@@ -33,6 +33,7 @@ function initializeAdminApp(): admin.App {
     // Initialize the app with a unique name.
     const newApp = admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
+      storageBucket: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
     }, ADMIN_APP_NAME);
 
     return newApp;
@@ -62,4 +63,13 @@ export const getAdminDb = (): FirebaseFirestore.Firestore => {
  */
 export const getAdminAuth = (): admin.auth.Auth => {
   return initializeAdminApp().auth();
+};
+
+/**
+ * Gets the Storage instance from the lazily-initialized admin app.
+ * This is used for server-side file operations.
+ * @returns {admin.storage.Storage} The Firebase Storage instance.
+ */
+export const getAdminStorage = (): admin.storage.Storage => {
+  return initializeAdminApp().storage();
 };

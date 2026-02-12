@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -5,11 +6,10 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Camera, Upload, Loader2, RefreshCw, CheckCircle, AlertTriangle, SwitchCamera } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useStorage, useAuth } from '@/firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
 import type { Shoe } from '@/lib/types';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { uploadImageAction } from '../_actions/upload-image-action';
 
 interface ImageUploaderProps {
   onImageUploaded: (image: Shoe['images'][0]) => void;
@@ -17,8 +17,6 @@ interface ImageUploaderProps {
 
 export function ImageUploader({ onImageUploaded }: ImageUploaderProps) {
   const { toast } = useToast();
-  const storage = useStorage();
-  const auth = useAuth();
   const [isUploading, setIsUploading] = useState(false);
   const [activeTab, setActiveTab] = useState('upload');
 
@@ -94,15 +92,6 @@ export function ImageUploader({ onImageUploaded }: ImageUploaderProps) {
   };
 
   const handleUpload = async () => {
-    if (!auth.currentUser) {
-        toast({
-            variant: 'destructive',
-            title: 'Authentication Error',
-            description: 'You must be logged in to upload images. Please refresh the page.',
-        });
-        return;
-    }
-
     let imageBlob: Blob | null = null;
     let imageName: string = 'product-image.jpg';
 
@@ -115,27 +104,33 @@ export function ImageUploader({ onImageUploaded }: ImageUploaderProps) {
         imageName = `capture-${Date.now()}.jpg`;
     }
 
-    if (!imageBlob || !storage) {
-      toast({ variant: 'destructive', title: 'No image selected or storage unavailable' });
+    if (!imageBlob) {
+      toast({ variant: 'destructive', title: 'No image selected' });
       return;
     }
 
     setIsUploading(true);
 
-    const uniqueFileName = `${Date.now()}-${imageName}`;
+    const uniqueFileName = `${Date.now()}-${imageName.replace(/\s+/g, '-')}`;
     const filePath = `product-images/${uniqueFileName}`;
-    const storageRef = ref(storage, filePath);
+
+    const formData = new FormData();
+    formData.append('file', imageBlob, imageName);
+    formData.append('filePath', filePath);
 
     try {
-        const snapshot = await uploadBytes(storageRef, imageBlob);
-        const downloadURL = await getDownloadURL(snapshot.ref);
+        const result = await uploadImageAction(formData);
+
+        if (!result.success || !result.url) {
+            throw new Error(result.error || 'Server action returned an error.');
+        }
         
         onImageUploaded({
           id: uuidv4(),
-          url: downloadURL,
+          url: result.url,
           alt: 'A product image',
           hint: 'shoe photo',
-          path: filePath,
+          path: result.path,
         });
 
         toast({
@@ -146,25 +141,10 @@ export function ImageUploader({ onImageUploaded }: ImageUploaderProps) {
 
     } catch (error: any) {
         console.error('Upload failed:', error);
-        let description = 'There was a problem uploading your image.';
-        switch (error.code) {
-          case 'storage/unauthorized':
-            description = 'Permission Denied. Please ensure your Firebase Storage security rules are correct and you are properly authenticated.';
-            break;
-          case 'storage/canceled':
-            description = 'The upload was canceled.';
-            break;
-          case 'storage/unknown':
-            description = 'An unknown error occurred. Please check your network connection.';
-            break;
-          default:
-            description = error.message;
-            break;
-        }
         toast({
           variant: 'destructive',
           title: 'Upload Failed',
-          description: description,
+          description: error.message || 'An unknown error occurred during upload.',
         });
     } finally {
         setIsUploading(false);
