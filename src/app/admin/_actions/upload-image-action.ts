@@ -8,10 +8,9 @@ export async function uploadImageAction(formData: FormData) {
     return { success: false, error: 'No file provided.' };
   }
 
-  // The "Unknown API key" error means this value is incorrect.
-  // Please find your correct Cloud Name in your Cloudinary dashboard.
   const cloudName = "dwph3txc8"; 
-  const uploadPreset = "227f34f4-9932-4512-82a0-d13b5afe528c"; 
+  // Using the human-readable preset NAME, not the ID.
+  const uploadPreset = "Carlbtw"; 
 
   const cloudinaryFormData = new FormData();
   cloudinaryFormData.append("file", file);
