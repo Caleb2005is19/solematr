@@ -8,9 +8,15 @@ export async function uploadImageAction(formData: FormData) {
     return { success: false, error: 'No file provided.' };
   }
 
-  const cloudName = "dwph3txc8"; 
-  // Using the human-readable preset NAME, not the ID.
-  const uploadPreset = "Carlbtw"; 
+  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+  const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+
+  if (!cloudName || !uploadPreset) {
+    return { 
+      success: false, 
+      error: 'Cloudinary environment variables are not configured. Please set NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME and NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET in your environment variables. Refer to the README.md for details.' 
+    };
+  }
 
   const cloudinaryFormData = new FormData();
   cloudinaryFormData.append("file", file);
