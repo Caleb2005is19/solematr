@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Camera, Upload, Loader2, RefreshCw, CheckCircle, AlertTriangle, SwitchCamera } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
 import { useStorage, useAuth } from '@/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
@@ -21,6 +20,7 @@ export function ImageUploader({ onImageUploaded }: ImageUploaderProps) {
   const storage = useStorage();
   const auth = useAuth();
   const [isUploading, setIsUploading] = useState(false);
+  const [activeTab, setActiveTab] = useState('upload');
 
   // File Upload State
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -86,8 +86,6 @@ export function ImageUploader({ onImageUploaded }: ImageUploaderProps) {
     }
   };
   
-  const [activeTab, setActiveTab] = useState('upload');
-
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
