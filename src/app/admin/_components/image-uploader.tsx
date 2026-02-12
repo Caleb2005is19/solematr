@@ -6,12 +6,11 @@ import { useToast } from '@/hooks/use-toast';
 import { Camera, Upload, Loader2, RefreshCw, CheckCircle, AlertTriangle, SwitchCamera } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { useStorage } from '@/firebase';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { useStorage, useAuth } from '@/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
 import type { Shoe } from '@/lib/types';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Progress } from '@/components/ui/progress';
 
 interface ImageUploaderProps {
   onImageUploaded: (image: Shoe['images'][0]) => void;
@@ -20,10 +19,8 @@ interface ImageUploaderProps {
 export function ImageUploader({ onImageUploaded }: ImageUploaderProps) {
   const { toast } = useToast();
   const storage = useStorage();
-
-  const [activeTab, setActiveTab] = useState('upload');
+  const auth = useAuth();
   const [isUploading, setIsUploading] = useState(false);
-  const [progress, setProgress] = useState(0);
 
   // File Upload State
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -37,7 +34,6 @@ export function ImageUploader({ onImageUploaded }: ImageUploaderProps) {
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
 
   const getCameraPermission = useCallback(async () => {
-    // Reset state before requesting to show loading indicator
     setHasCameraPermission(null);
     if (videoRef.current && videoRef.current.srcObject) {
         const stream = videoRef.current.srcObject as MediaStream;
@@ -65,7 +61,6 @@ export function ImageUploader({ onImageUploaded }: ImageUploaderProps) {
     if (activeTab === 'camera') {
       getCameraPermission();
     }
-    // Cleanup function to stop camera when component unmounts or tab changes
     return () => {
       if (videoRef.current && videoRef.current.srcObject) {
         const stream = videoRef.current.srcObject as MediaStream;
@@ -90,6 +85,8 @@ export function ImageUploader({ onImageUploaded }: ImageUploaderProps) {
       setCapturedImage(dataUrl);
     }
   };
+  
+  const [activeTab, setActiveTab] = useState('upload');
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -99,6 +96,15 @@ export function ImageUploader({ onImageUploaded }: ImageUploaderProps) {
   };
 
   const handleUpload = async () => {
+    if (!auth.currentUser) {
+        toast({
+            variant: 'destructive',
+            title: 'Authentication Error',
+            description: 'You must be logged in to upload images. Please refresh the page.',
+        });
+        return;
+    }
+
     let imageBlob: Blob | null = null;
     let imageName: string = 'product-image.jpg';
 
@@ -108,7 +114,7 @@ export function ImageUploader({ onImageUploaded }: ImageUploaderProps) {
     } else if (activeTab === 'camera' && capturedImage) {
         const response = await fetch(capturedImage);
         imageBlob = await response.blob();
-        imageName = `capture-${Date.now()}.jpg`
+        imageName = `capture-${Date.now()}.jpg`;
     }
 
     if (!imageBlob || !storage) {
@@ -117,31 +123,41 @@ export function ImageUploader({ onImageUploaded }: ImageUploaderProps) {
     }
 
     setIsUploading(true);
-    setProgress(0);
+
     const imageId = uuidv4();
     const filePath = `product-images/${imageId}-${imageName}`;
     const storageRef = ref(storage, filePath);
-    const uploadTask = uploadBytesResumable(storageRef, imageBlob);
 
-    uploadTask.on(
-      'state_changed',
-      (snapshot) => {
-        const progressPercent = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        setProgress(progressPercent);
-      },
-      (error) => {
+    try {
+        const snapshot = await uploadBytes(storageRef, imageBlob);
+        const downloadURL = await getDownloadURL(snapshot.ref);
+        
+        onImageUploaded({
+          id: imageId,
+          url: downloadURL,
+          alt: 'A product image',
+          hint: 'shoe photo',
+          path: filePath,
+        });
+
+        toast({
+          title: 'Upload Successful',
+          description: 'Your image has been added.',
+          action: <CheckCircle className="text-green-500" />,
+        });
+
+    } catch (error: any) {
         console.error('Upload failed:', error);
         let description = 'There was a problem uploading your image.';
-        // Check for specific Firebase Storage error codes
         switch (error.code) {
           case 'storage/unauthorized':
-            description = 'Permission Denied. Ensure your Storage security rules allow writes for admins.';
+            description = 'Permission Denied. Please ensure your Firebase Storage security rules are correct and you are properly authenticated.';
             break;
           case 'storage/canceled':
             description = 'The upload was canceled.';
             break;
           case 'storage/unknown':
-            description = 'An unknown error occurred. Please check your network connection and storage rules.';
+            description = 'An unknown error occurred. Please check your network connection.';
             break;
           default:
             description = error.message;
@@ -152,31 +168,11 @@ export function ImageUploader({ onImageUploaded }: ImageUploaderProps) {
           title: 'Upload Failed',
           description: description,
         });
+    } finally {
         setIsUploading(false);
-        setProgress(0);
-      },
-      async () => {
-        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-        onImageUploaded({
-          id: imageId,
-          url: downloadURL,
-          alt: 'A product image',
-          hint: 'shoe photo',
-          path: filePath,
-        });
-        toast({
-          title: 'Upload Successful',
-          description: 'Your image has been added.',
-          action: <CheckCircle className="text-green-500" />,
-        });
-        
-        // Reset state after successful upload
-        setIsUploading(false);
-        setProgress(0);
         setSelectedFile(null);
         setCapturedImage(null);
-      }
-    );
+    }
   };
 
   return (
@@ -243,13 +239,6 @@ export function ImageUploader({ onImageUploaded }: ImageUploaderProps) {
           </div>
         </TabsContent>
       </Tabs>
-
-      {isUploading && (
-        <div className="space-y-2">
-            <Progress value={progress} />
-            <p className="text-sm text-center text-muted-foreground">Uploading... {Math.round(progress)}%</p>
-        </div>
-      )}
 
       <Button 
         type="button" 
