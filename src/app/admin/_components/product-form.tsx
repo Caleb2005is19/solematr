@@ -25,7 +25,7 @@ import {
 import { useFirestore, useStorage } from '@/firebase';
 import type { Shoe } from '@/lib/types';
 import { useState, useEffect } from 'react';
-import { Loader2, Plus, Trash2, Camera, Upload, Image as ImageIcon } from 'lucide-react';
+import { Loader2, Plus, Trash2 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { doc, setDoc, addDoc, collection } from 'firebase/firestore';
@@ -33,7 +33,6 @@ import { useToast } from '@/hooks/use-toast';
 import { getPlaceholderImage } from '@/lib/placeholder-images';
 import { ImageUploader } from './image-uploader';
 import Image from 'next/image';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { deleteObject, ref } from 'firebase/storage';
 
 const formSchema = z.object({
@@ -71,7 +70,6 @@ export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [customSizeInput, setCustomSizeInput] = useState('');
-  const [isImageUploaderOpen, setIsImageUploaderOpen] = useState(false);
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(formSchema),
@@ -114,7 +112,6 @@ export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
 
   const handleImageUpload = (image: Shoe['images'][0]) => {
     form.setValue('images', [...(currentImages || []), image], { shouldValidate: true });
-    setIsImageUploaderOpen(false);
   }
 
   const handleImageDelete = async (imageToDelete: Shoe['images'][0]) => {
@@ -370,37 +367,34 @@ export function ProductForm({ shoe, onFormSubmit }: ProductFormProps) {
                         <FormDescription>
                             Upload at least one image. The first image will be the main display image.
                         </FormDescription>
-                         <div className="p-4 border rounded-lg space-y-4">
-                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
-                                {(currentImages || []).map((image, index) => (
-                                    <div key={image.id} className="relative group aspect-square">
-                                        <Image src={image.url} alt={image.alt} fill sizes="100px" className="object-cover rounded-md"/>
-                                        <div className="absolute top-1 right-1">
-                                            <Button type="button" variant="destructive" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => handleImageDelete(image)}>
-                                                <Trash2 className="h-4 w-4"/>
-                                            </Button>
+                        <div className="p-4 border rounded-lg">
+                            <FormLabel>Current Images</FormLabel>
+                            {(currentImages || []).length > 0 ? (
+                                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 mt-2">
+                                    {(currentImages || []).map((image, index) => (
+                                        <div key={image.id} className="relative group aspect-square">
+                                            <Image src={image.url} alt={image.alt} fill sizes="100px" className="object-cover rounded-md"/>
+                                            <div className="absolute top-1 right-1">
+                                                <Button type="button" variant="destructive" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => handleImageDelete(image)}>
+                                                    <Trash2 className="h-4 w-4"/>
+                                                </Button>
+                                            </div>
+                                            {index === 0 && (
+                                                <div className="absolute bottom-0 w-full bg-black/50 text-white text-xs text-center py-0.5 rounded-b-md">Main</div>
+                                            )}
                                         </div>
-                                         {index === 0 && (
-                                            <div className="absolute bottom-0 w-full bg-black/50 text-white text-xs text-center py-0.5 rounded-b-md">Main</div>
-                                        )}
-                                    </div>
-                                ))}
-                                <Dialog open={isImageUploaderOpen} onOpenChange={setIsImageUploaderOpen}>
-                                    <DialogTrigger asChild>
-                                        <Button type="button" variant="outline" className="aspect-square w-full h-full flex flex-col items-center justify-center">
-                                            <Plus className="h-6 w-6"/>
-                                            <span>Add Image</span>
-                                        </Button>
-                                    </DialogTrigger>
-                                    <DialogContent>
-                                        <DialogHeader>
-                                            <DialogTitle>Add a New Image</DialogTitle>
-                                        </DialogHeader>
-                                        <ImageUploader onImageUploaded={handleImageUpload} />
-                                    </DialogContent>
-                                </Dialog>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-sm text-muted-foreground mt-2">No images added yet.</p>
+                            )}
+                        </div>
+                        <div className="p-4 border rounded-lg">
+                            <FormLabel>Add a New Image</FormLabel>
+                            <div className="mt-2">
+                                <ImageUploader onImageUploaded={handleImageUpload} />
                             </div>
-                         </div>
+                        </div>
                         <FormMessage />
                     </FormItem>
                     )}
