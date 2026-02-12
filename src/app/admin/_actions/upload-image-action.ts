@@ -1,4 +1,3 @@
-
 'use server';
 
 import { getAdminStorage } from '@/lib/firebase-admin';
@@ -10,15 +9,15 @@ export async function uploadImageAction(formData: FormData) {
     return { success: false, error: 'No file provided.' };
   }
 
+  const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
+  if (!bucketName) {
+    return { success: false, error: 'Configuration Error: The `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` environment variable is not set on the server. Please add it to your Vercel project settings.' };
+  }
+
   try {
     const storage = getAdminStorage();
-
-    // Explicitly check for the bucket name. This is a common failure point if the env var is missing.
-    const bucketName = storage.bucket().name;
-    if (!bucketName) {
-        return { success: false, error: 'Firebase Storage bucket name not found. Please ensure the NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET environment variable is set correctly.' };
-    }
-    const bucket = storage.bucket();
+    // Pass the bucket name explicitly to be safe
+    const bucket = storage.bucket(bucketName);
 
     // The file path is generated on the client and passed via FormData
     const filePath = formData.get('filePath') as string;
