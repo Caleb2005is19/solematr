@@ -10,7 +10,7 @@ export async function uploadImageAction(formData: FormData) {
 
   // The "Unknown API key" error means this value is incorrect.
   // Please find your correct Cloud Name in your Cloudinary dashboard.
-  const cloudName = "YOUR_CLOUD_NAME_HERE"; 
+  const cloudName = "dwph3txc8"; 
   const uploadPreset = "227f34f4-9932-4512-82a0-d13b5afe528c"; 
 
   const cloudinaryFormData = new FormData();
